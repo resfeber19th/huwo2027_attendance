@@ -88,7 +88,6 @@
     .btn-secondary:hover {
       background: #474a4d;
     }
-    /* 一時保存用ボタン */
     .btn-warning {
       background: #f2994a;
       color: white;
@@ -96,7 +95,6 @@
     .btn-warning:hover {
       background: #e0883b;
     }
-    /* 演奏会カードレイアウト */
     .concert-item {
       padding: 15px;
       border: 1px solid #e0e0e0;
@@ -113,7 +111,6 @@
       background: #e8f0fe;
       border-color: #1a73e8;
     }
-    /* ステータスバッジ */
     .status-badge {
       font-size: 12px;
       font-weight: 700;
@@ -231,7 +228,6 @@
           <input type="date" id="att-date" onchange="updateTargetPieces()" required>
         </div>
 
-        <!-- 日付＋曲名の選択肢 -->
         <div class="form-group">
           <label for="att-target">対象曲・練習項目</label>
           <select id="att-target" required>
@@ -239,7 +235,6 @@
           </select>
         </div>
 
-        <!-- 出欠の4択（〇, ✕, 遅刻, 早退） -->
         <div class="form-group">
           <label for="att-status">出欠</label>
           <select id="att-status" required>
@@ -290,84 +285,106 @@
 
       const savedUser = localStorage.getItem("band_user");
       if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-        showHome();
+        try {
+          currentUser = JSON.parse(savedUser);
+          if (currentUser && currentUser.userId) {
+            showHome();
+          } else {
+            logout();
+          }
+        } catch (e) {
+          logout();
+        }
       }
     };
 
     function displayLastModified() {
-      const lastMod = new Date(document.lastModified);
-      if (!isNaN(lastMod.getTime())) {
-        const year = lastMod.getFullYear();
-        const month = String(lastMod.getMonth() + 1).padStart(2, '0');
-        const day = String(lastMod.getDate()).padStart(2, '0');
-        const hours = String(lastMod.getHours()).padStart(2, '0');
-        const minutes = String(lastMod.getMinutes()).padStart(2, '0');
-        document.getElementById("last-updated").textContent = `最終更新: ${year}/${month}/${day} ${hours}:${minutes}`;
+      try {
+        const lastMod = new Date(document.lastModified);
+        if (!isNaN(lastMod.getTime())) {
+          const year = lastMod.getFullYear();
+          const month = String(lastMod.getMonth() + 1).padStart(2, '0');
+          const day = String(lastMod.getDate()).padStart(2, '0');
+          const hours = String(lastMod.getHours()).padStart(2, '0');
+          const minutes = String(lastMod.getMinutes()).padStart(2, '0');
+          document.getElementById("last-updated").textContent = `最終更新: ${year}/${month}/${day} ${hours}:${minutes}`;
+        }
+      } catch (e) {
+        console.warn("Date parse error", e);
       }
     }
 
     function switchView(viewId) {
       ["view-login", "view-home", "view-roster", "view-attendance"].forEach(id => {
-        document.getElementById(id).classList.add("hidden");
+        const el = document.getElementById(id);
+        if (el) el.classList.add("hidden");
       });
-      document.getElementById(viewId).classList.remove("hidden");
+      const target = document.getElementById(viewId);
+      if (target) target.classList.remove("hidden");
     }
 
     async function login() {
-      const userId = document.getElementById("login-id").value.trim();
-      const password = document.getElementById("login-pass").value.trim();
+      const userIdEl = document.getElementById("login-id");
+      const passwordEl = document.getElementById("login-pass");
       const msg = document.getElementById("login-msg");
       const btn = document.getElementById("login-btn");
 
+      const userId = userIdEl ? userIdEl.value.trim() : "";
+      const password = passwordEl ? passwordEl.value.trim() : "";
+
       if (!userId || !password) {
-        msg.textContent = "IDとパスワードを入力してください。";
+        if (msg) msg.textContent = "IDとパスワードを入力してください。";
         return;
       }
 
-      btn.disabled = true;
-      msg.textContent = "通信中...";
+      if (btn) btn.disabled = true;
+      if (msg) msg.textContent = "通信中...";
 
       const res = await apiCall({ action: "login", userId, password });
-      btn.disabled = false;
+      if (btn) btn.disabled = false;
 
-      if (res && res.result === "success") {
-        msg.textContent = "";
+      if (res && res.result === "success" && res.user) {
+        if (msg) msg.textContent = "";
         currentUser = res.user;
         localStorage.setItem("band_user", JSON.stringify(currentUser));
         showHome();
       } else {
-        msg.textContent = res ? res.message : "ログイン処理に失敗しました。";
+        if (msg) msg.textContent = res ? res.message : "ログイン処理に失敗しました。";
       }
     }
 
     function logout() {
       localStorage.removeItem("band_user");
       currentUser = null;
-      document.getElementById("login-id").value = "";
-      document.getElementById("login-pass").value = "";
+      const u = document.getElementById("login-id");
+      const p = document.getElementById("login-pass");
+      if (u) u.value = "";
+      if (p) p.value = "";
       switchView("view-login");
     }
 
     async function showHome() {
       switchView("view-home");
-      document.getElementById("user-name").textContent = currentUser.name;
+      const uNameEl = document.getElementById("user-name");
+      if (uNameEl && currentUser) uNameEl.textContent = currentUser.name || "";
       
       const container = document.getElementById("concert-list");
+      if (!container) return;
       container.innerHTML = "読み込み中...";
 
-      const res = await apiCall({ action: "getConcerts", userId: currentUser.userId });
+      const res = await apiCall({ action: "getConcerts", userId: currentUser ? currentUser.userId : "" });
       if (res && res.result === "success") {
-        currentConcerts = res.concerts;
+        currentConcerts = Array.isArray(res.concerts) ? res.concerts : [];
         currentSchedules = res.schedules || {};
         container.innerHTML = "";
 
-        if (res.concerts.length === 0) {
+        if (currentConcerts.length === 0) {
           container.innerHTML = "<p style='color:#666;'>予定されている演奏会はありません。</p>";
           return;
         }
 
-        res.concerts.forEach(c => {
+        currentConcerts.forEach(c => {
+          if (!c) return;
           const div = document.createElement("div");
           div.className = "concert-item";
           
@@ -382,7 +399,7 @@
 
           div.innerHTML = `
             <div>
-              <strong>${c.title}</strong><br>
+              <strong>${c.title || "演奏会"}</strong><br>
               <small style="color:#666;">タップして乗番・パートを設定</small>
             </div>
             ${badgeHtml}
@@ -395,17 +412,23 @@
 
     function showRosterForm(concertId) {
       selectedConcertId = concertId;
-      const concert = currentConcerts.find(c => c.concertId === concertId);
-      document.getElementById("roster-concert-title").textContent = concert.title;
+      const concert = currentConcerts.find(c => c && c.concertId === concertId);
+      if (!concert) return;
+
+      const titleEl = document.getElementById("roster-concert-title");
+      if (titleEl) titleEl.textContent = concert.title || "";
       
       const container = document.getElementById("pieces-container");
+      if (!container) return;
       container.innerHTML = "";
 
-      const userPart = currentUser.defaultPart || "";
+      const userPart = (currentUser && currentUser.defaultPart) ? currentUser.defaultPart : "";
       const options = PART_OPTIONS[userPart] || ["1st", "2nd", "3rd", "アシスト", "不参加", "その他（直接入力）"];
+      const userRoster = concert.userRoster || {};
 
-      concert.pieces.forEach((piece, index) => {
-        const savedPart = concert.userRoster[piece] || "";
+      const pieces = Array.isArray(concert.pieces) ? concert.pieces : [];
+      pieces.forEach((piece, index) => {
+        const savedPart = userRoster[piece] || "";
         const isCustom = savedPart && !options.includes(savedPart);
 
         const card = document.createElement("div");
@@ -425,7 +448,8 @@
         container.appendChild(card);
 
         if (isCustom) {
-          document.getElementById(`select-part-${index}`).value = "その他（直接入力）";
+          const sel = document.getElementById(`select-part-${index}`);
+          if (sel) sel.value = "その他（直接入力）";
         }
       });
 
@@ -435,6 +459,8 @@
     function toggleCustomInput(index) {
       const select = document.getElementById(`select-part-${index}`);
       const customInput = document.getElementById(`custom-part-${index}`);
+      if (!select || !customInput) return;
+
       if (select.value === "その他（直接入力）") {
         customInput.style.display = "block";
         customInput.required = true;
@@ -444,17 +470,20 @@
       }
     }
 
-    // 乗番データの送信処理（"確定" または "一時保存"）
     async function submitRoster(saveStatus) {
-      const concert = currentConcerts.find(c => c.concertId === selectedConcertId);
-      const roster = {};
+      const concert = currentConcerts.find(c => c && c.concertId === selectedConcertId);
+      if (!concert) return;
 
-      concert.pieces.forEach((piece, index) => {
+      const roster = {};
+      const pieces = Array.isArray(concert.pieces) ? concert.pieces : [];
+
+      pieces.forEach((piece, index) => {
         const select = document.getElementById(`select-part-${index}`);
         const customInput = document.getElementById(`custom-part-${index}`);
+        if (!select) return;
         
         let finalPart = select.value;
-        if (finalPart === "その他（直接入力）") {
+        if (finalPart === "その他（直接入力）" && customInput) {
           finalPart = customInput.value.trim();
         }
 
@@ -465,7 +494,7 @@
 
       const res = await apiCall({
         action: "saveRoster",
-        userId: currentUser.userId,
+        userId: currentUser ? currentUser.userId : "",
         concertId: selectedConcertId,
         roster: roster,
         status: saveStatus
@@ -480,16 +509,21 @@
 
     function showAttendanceForm() {
       switchView("view-attendance");
-      const today = new Date().toISOString().split('T')[0];
-      document.getElementById("att-date").value = today;
+      const dateEl = document.getElementById("att-date");
+      if (dateEl) {
+        const today = new Date().toISOString().split('T')[0];
+        dateEl.value = today;
+      }
       updateTargetPieces();
     }
 
     function updateTargetPieces() {
-      const dateVal = document.getElementById("att-date").value;
+      const dateEl = document.getElementById("att-date");
       const targetSelect = document.getElementById("att-target");
+      if (!targetSelect) return;
       targetSelect.innerHTML = "";
 
+      const dateVal = dateEl ? dateEl.value : "";
       if (!dateVal) {
         targetSelect.innerHTML = "<option value=''>日付を選択してください</option>";
         return;
@@ -499,11 +533,13 @@
       const days = ["日", "月", "火", "水", "木", "金", "土"];
       const formattedDateStr = `${d.getMonth() + 1}/${d.getDate()}(${days[d.getDay()]})`;
 
-      const scheduledItems = currentSchedules[dateVal] || [];
+      const scheduledItems = (currentSchedules && Array.isArray(currentSchedules[dateVal])) ? currentSchedules[dateVal] : [];
+      const userDefaultPart = (currentUser && currentUser.defaultPart) ? currentUser.defaultPart : "";
 
       if (scheduledItems.length > 0) {
         scheduledItems.forEach(item => {
-          const pieceName = item.piece;
+          if (!item) return;
+          const pieceName = item.piece || "";
           const timeStr = item.time ? ` ${item.time}` : "";
 
           if (pieceName === "基礎合奏") {
@@ -511,12 +547,12 @@
             const valStr = `${formattedDateStr}${timeStr} 基礎合奏`;
             opt.value = valStr;
             opt.textContent = valStr;
-            opt.setAttribute("data-part", currentUser.defaultPart || "");
+            opt.setAttribute("data-part", userDefaultPart);
             targetSelect.appendChild(opt);
           } else {
-            let userPartForPiece = currentUser.defaultPart || "";
+            let userPartForPiece = userDefaultPart;
             currentConcerts.forEach(c => {
-              if (c.userRoster && c.userRoster[pieceName]) {
+              if (c && c.userRoster && c.userRoster[pieceName]) {
                 userPartForPiece = c.userRoster[pieceName];
               }
             });
@@ -535,17 +571,19 @@
         const defaultOpt = document.createElement("option");
         defaultOpt.value = `${formattedDateStr} 基礎合奏`;
         defaultOpt.textContent = `${formattedDateStr} 基礎合奏`;
-        defaultOpt.setAttribute("data-part", currentUser.defaultPart || "");
+        defaultOpt.setAttribute("data-part", userDefaultPart);
         targetSelect.appendChild(defaultOpt);
 
         let myPieces = [];
         currentConcerts.forEach(c => {
-          Object.keys(c.userRoster).forEach(piece => {
-            const part = c.userRoster[piece];
-            if (part && part !== "不参加") {
-              myPieces.push({ concertTitle: c.title, piece, part });
-            }
-          });
+          if (c && c.userRoster) {
+            Object.keys(c.userRoster).forEach(piece => {
+              const part = c.userRoster[piece];
+              if (part && part !== "不参加") {
+                myPieces.push({ concertTitle: c.title, piece, part });
+              }
+            });
+          }
         });
 
         myPieces.forEach(p => {
@@ -559,35 +597,46 @@
       }
     }
 
-    document.getElementById("attendance-form").onsubmit = async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById("att-submit-btn");
-      btn.disabled = true;
-      btn.textContent = "送信中...";
+    const attForm = document.getElementById("attendance-form");
+    if (attForm) {
+      attForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById("att-submit-btn");
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "送信中...";
+        }
 
-      const targetSelect = document.getElementById("att-target");
-      const selectedOption = targetSelect.options[targetSelect.selectedIndex];
-      const detailPart = selectedOption ? selectedOption.getAttribute("data-part") || "" : "";
+        const targetSelect = document.getElementById("att-target");
+        const selectedOption = targetSelect ? targetSelect.options[targetSelect.selectedIndex] : null;
+        const detailPart = selectedOption ? (selectedOption.getAttribute("data-part") || "") : "";
 
-      const res = await apiCall({
-        action: "saveAttendance",
-        userId: currentUser.userId,
-        name: currentUser.name,
-        date: document.getElementById("att-date").value,
-        targetPiece: targetSelect.value,
-        detailPart: detailPart,
-        status: document.getElementById("att-status").value,
-        note: document.getElementById("att-note").value
-      });
+        const dateEl = document.getElementById("att-date");
+        const statusEl = document.getElementById("att-status");
+        const noteEl = document.getElementById("att-note");
 
-      btn.disabled = false;
-      btn.textContent = "出欠を送信する";
+        const res = await apiCall({
+          action: "saveAttendance",
+          userId: currentUser ? currentUser.userId : "",
+          name: currentUser ? currentUser.name : "",
+          date: dateEl ? dateEl.value : "",
+          targetPiece: targetSelect ? targetSelect.value : "",
+          detailPart: detailPart,
+          status: statusEl ? statusEl.value : "〇",
+          note: noteEl ? noteEl.value : ""
+        });
 
-      if (res && res.result === "success") {
-        alert("出欠を送信しました！");
-        showHome();
-      }
-    };
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "出欠を送信する";
+        }
+
+        if (res && res.result === "success") {
+          alert("出欠を送信しました！");
+          showHome();
+        }
+      };
+    }
 
     /**
      * GAS通信用関数
@@ -607,7 +656,7 @@
         }
 
         const resData = await response.json();
-        if (resData.result === "error") {
+        if (resData && resData.result === "error") {
           alert("エラー: " + resData.message + contactAdminMsg);
         }
         return resData;
