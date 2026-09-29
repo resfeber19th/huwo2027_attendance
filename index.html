@@ -88,6 +88,15 @@
     .btn-secondary:hover {
       background: #474a4d;
     }
+    /* 一時保存用ボタン */
+    .btn-warning {
+      background: #f2994a;
+      color: white;
+    }
+    .btn-warning:hover {
+      background: #e0883b;
+    }
+    /* 演奏会カードレイアウト */
     .concert-item {
       padding: 15px;
       border: 1px solid #e0e0e0;
@@ -95,11 +104,34 @@
       margin-bottom: 10px;
       cursor: pointer;
       background: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       transition: background 0.2s, border-color 0.2s;
     }
     .concert-item:hover {
       background: #e8f0fe;
       border-color: #1a73e8;
+    }
+    /* ステータスバッジ */
+    .status-badge {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .badge-success {
+      background-color: #e6f4ea;
+      color: #137333;
+    }
+    .badge-warning {
+      background-color: #fef7e0;
+      color: #b06000;
+    }
+    .badge-gray {
+      background-color: #f1f3f4;
+      color: #5f6368;
     }
     .piece-card {
       padding: 12px;
@@ -113,6 +145,14 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 15px;
+    }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .btn-group button {
+      margin-top: 0;
     }
     .app-footer {
       text-align: center;
@@ -173,7 +213,10 @@
       <h3 id="roster-concert-title" style="margin-top:0; font-weight:700; font-size:16px;"></h3>
       <form id="roster-form">
         <div id="pieces-container"></div>
-        <button type="submit" id="roster-submit-btn">乗番情報を保存する</button>
+        <div class="btn-group">
+          <button type="button" class="btn-warning" onclick="submitRoster('一時保存')">一時保存する</button>
+          <button type="button" onclick="submitRoster('確定')">保存する（確定）</button>
+        </div>
       </form>
     </div>
 
@@ -239,7 +282,7 @@
 
     let currentUser = null;
     let currentConcerts = [];
-    let currentSchedules = {}; // 練習日程マップ
+    let currentSchedules = {};
     let selectedConcertId = null;
 
     window.onload = () => {
@@ -327,7 +370,23 @@
         res.concerts.forEach(c => {
           const div = document.createElement("div");
           div.className = "concert-item";
-          div.innerHTML = `<strong>${c.title}</strong><br><small style="color:#666;">タップして乗番・パートを設定</small>`;
+          
+          let badgeHtml = "";
+          if (c.status === "確定") {
+            badgeHtml = `<span class="status-badge badge-success">完了</span>`;
+          } else if (c.status === "一時保存") {
+            badgeHtml = `<span class="status-badge badge-warning">一時保存中</span>`;
+          } else {
+            badgeHtml = `<span class="status-badge badge-gray">未登録</span>`;
+          }
+
+          div.innerHTML = `
+            <div>
+              <strong>${c.title}</strong><br>
+              <small style="color:#666;">タップして乗番・パートを設定</small>
+            </div>
+            ${badgeHtml}
+          `;
           div.onclick = () => showRosterForm(c.concertId);
           container.appendChild(div);
         });
@@ -385,8 +444,8 @@
       }
     }
 
-    document.getElementById("roster-form").onsubmit = async (e) => {
-      e.preventDefault();
+    // 乗番データの送信処理（"確定" または "一時保存"）
+    async function submitRoster(saveStatus) {
       const concert = currentConcerts.find(c => c.concertId === selectedConcertId);
       const roster = {};
 
@@ -404,25 +463,20 @@
         }
       });
 
-      const btn = document.getElementById("roster-submit-btn");
-      btn.disabled = true;
-      btn.textContent = "保存中...";
-
       const res = await apiCall({
         action: "saveRoster",
         userId: currentUser.userId,
         concertId: selectedConcertId,
-        roster
+        roster: roster,
+        status: saveStatus
       });
 
-      btn.disabled = false;
-      btn.textContent = "乗番情報を保存する";
-
       if (res && res.result === "success") {
-        alert("乗番情報を保存しました！");
+        const msgStr = saveStatus === "確定" ? "乗番情報を保存（完了）しました！" : "乗番情報を一時保存しました！";
+        alert(msgStr);
         showHome();
       }
-    };
+    }
 
     function showAttendanceForm() {
       switchView("view-attendance");
@@ -445,11 +499,9 @@
       const days = ["日", "月", "火", "水", "木", "金", "土"];
       const formattedDateStr = `${d.getMonth() + 1}/${d.getDate()}(${days[d.getDay()]})`;
 
-      // 「練習日程」タブに管理者が入力した指定日のスケジュールを取得
       const scheduledItems = currentSchedules[dateVal] || [];
 
       if (scheduledItems.length > 0) {
-        // 管理者指定のスケジュールがある場合
         scheduledItems.forEach(item => {
           const pieceName = item.piece;
           const timeStr = item.time ? ` ${item.time}` : "";
@@ -462,7 +514,6 @@
             opt.setAttribute("data-part", currentUser.defaultPart || "");
             targetSelect.appendChild(opt);
           } else {
-            // 該当曲のユーザーパートを取得
             let userPartForPiece = currentUser.defaultPart || "";
             currentConcerts.forEach(c => {
               if (c.userRoster && c.userRoster[pieceName]) {
@@ -481,15 +532,12 @@
           }
         });
       } else {
-        // 管理者指定がない場合の標準生成
-        // 1. 基礎合奏
         const defaultOpt = document.createElement("option");
         defaultOpt.value = `${formattedDateStr} 基礎合奏`;
         defaultOpt.textContent = `${formattedDateStr} 基礎合奏`;
         defaultOpt.setAttribute("data-part", currentUser.defaultPart || "");
         targetSelect.appendChild(defaultOpt);
 
-        // 2. 個人登録済みの乗番曲
         let myPieces = [];
         currentConcerts.forEach(c => {
           Object.keys(c.userRoster).forEach(piece => {
