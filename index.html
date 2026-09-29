@@ -45,18 +45,18 @@
       <button onclick="logout()" style="width: auto; padding: 6px 12px;" class="btn-secondary">ログアウト</button>
     </div>
 
-    <!-- 合奏出欠入力カード -->
-    <div class="card" style="border-left: 5px solid #1a73e8;">
-      <h3 style="margin-top:0;">📅 合奏出欠確認</h3>
-      <p style="font-size:13px; color:#666;">次回の練習日の出欠を入力・変更できます。</p>
-      <button onclick="showAttendanceForm()">合奏出欠を入力する</button>
+    <!-- 優先度1: 演奏会・乗番設定カード（上配置） -->
+    <div class="card" style="border-left: 5px solid #34a853;">
+      <h3 style="margin-top:0;">🎼 演奏会・乗番設定</h3>
+      <p style="font-size:13px; color:#666;">最初に曲ごとの乗り番や担当パートを登録してください。</p>
+      <div id="concert-list">読み込み中...</div>
     </div>
 
-    <!-- 演奏会一覧カード -->
-    <div class="card">
-      <h3 style="margin-top:0;">🎼 演奏会・乗番設定</h3>
-      <p style="font-size:13px; color:#666;">タップして曲ごとの乗り番や持ち替えパートを登録します。</p>
-      <div id="concert-list">読み込み中...</div>
+    <!-- 優先度2: 合奏出欠入力カード -->
+    <div class="card" style="border-left: 5px solid #1a73e8;">
+      <h3 style="margin-top:0;">📅 合奏出欠確認</h3>
+      <p style="font-size:13px; color:#666;">練習日と対象曲（乗り番）を指定して出欠を入力します。</p>
+      <button onclick="showAttendanceForm()">合奏出欠を入力する</button>
     </div>
   </div>
 
@@ -74,33 +74,44 @@
   <div id="view-attendance" class="card hidden">
     <button onclick="showHome()" class="btn-secondary" style="margin-bottom: 15px; width: auto; padding: 6px 12px;">← ホームへ戻る</button>
     <h3 style="margin-top:0;">📅 合奏出欠入力</h3>
+    
     <form id="attendance-form">
       <div class="form-group">
-        <label for="att-date">練習日</label>
-        <input type="date" id="att-date" required>
+        <label for="att-date">練習日を選択</label>
+        <input type="date" id="att-date" onchange="updateTargetPieces()" required>
       </div>
+
+      <!-- 日付＋曲名の選択肢 -->
+      <div class="form-group">
+        <label for="att-target">対象曲・練習項目</label>
+        <select id="att-target" required>
+          <option value="">日付を選択してください</option>
+        </select>
+      </div>
+
+      <!-- 出欠の4択（〇, ✕, 遅刻, 早退） -->
       <div class="form-group">
         <label for="att-status">出欠</label>
         <select id="att-status" required>
-          <option value="出席">出席</option>
-          <option value="欠席">欠席</option>
+          <option value="〇">〇</option>
+          <option value="✕">✕</option>
           <option value="遅刻">遅刻</option>
           <option value="早退">早退</option>
         </select>
       </div>
+
       <div class="form-group">
         <label for="att-note">備考（遅刻早退の時間や理由など）</label>
         <textarea id="att-note" rows="3" placeholder="例: 19:30から遅れて参加予定です"></textarea>
       </div>
+
       <button type="submit" id="att-submit-btn">出欠を送信する</button>
     </form>
   </div>
 
   <script>
-    // ★★★ ここにStep 2で取得したGASの「ウェブアプリURL」を貼り付けます ★★★
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzepvTPwUVXo98Faz1MaOtuG5Qv_gLLAeU-iYs1_pZvGeFqgbQjRccfqhZ1Af48vcg/exec";
+    const GAS_URL = "YOUR_GAS_WEB_APP_URL_HERE"; // WebアプリURLを入力
 
-    // パートごとの乗り番・持ち替えプリセット定義
     const PART_OPTIONS = {
       "Clarinet": ["1st Cl", "2nd Cl", "3rd Cl", "Es Cl", "Alto Cl", "Bass Cl", "ContraBass Cl", "不参加", "その他（直接入力）"],
       "Trumpet": ["1st Tp", "2nd Tp", "3rd Tp", "Flugelhorn", "Cornet", "不参加", "その他（直接入力）"],
@@ -117,7 +128,6 @@
     let currentConcerts = [];
     let selectedConcertId = null;
 
-    // 初期起動時のログイン状態復元
     window.onload = () => {
       const savedUser = localStorage.getItem("band_user");
       if (savedUser) {
@@ -126,7 +136,6 @@
       }
     };
 
-    // 画面切り替えユーティリティ
     function switchView(viewId) {
       ["view-login", "view-home", "view-roster", "view-attendance"].forEach(id => {
         document.getElementById(id).classList.add("hidden");
@@ -134,7 +143,6 @@
       document.getElementById(viewId).classList.remove("hidden");
     }
 
-    // ログイン処理
     async function login() {
       const userId = document.getElementById("login-id").value.trim();
       const password = document.getElementById("login-pass").value.trim();
@@ -170,7 +178,6 @@
       switchView("view-login");
     }
 
-    // ホーム画面の表示 ＆ 演奏会一覧の取得
     async function showHome() {
       switchView("view-home");
       document.getElementById("user-name").textContent = currentUser.name;
@@ -198,7 +205,6 @@
       }
     }
 
-    // 乗番登録フォームの生成
     function showRosterForm(concertId) {
       selectedConcertId = concertId;
       const concert = currentConcerts.find(c => c.concertId === concertId);
@@ -238,7 +244,6 @@
       switchView("view-roster");
     }
 
-    // 自由入力の切り替え制御
     function toggleCustomInput(index) {
       const select = document.getElementById(`select-part-${index}`);
       const customInput = document.getElementById(`custom-part-${index}`);
@@ -251,7 +256,6 @@
       }
     }
 
-    // 乗番送信処理
     document.getElementById("roster-form").onsubmit = async (e) => {
       e.preventDefault();
       const concert = currentConcerts.find(c => c.concertId === selectedConcertId);
@@ -291,14 +295,53 @@
       }
     };
 
-    // 出欠画面の表示
     function showAttendanceForm() {
       switchView("view-attendance");
-      // 今日の日付を初期値にセット
-      document.getElementById("att-date").value = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById("att-date").value = today;
+      updateTargetPieces();
     }
 
-    // 出欠送信処理
+    function updateTargetPieces() {
+      const dateVal = document.getElementById("att-date").value;
+      const targetSelect = document.getElementById("att-target");
+      targetSelect.innerHTML = "";
+
+      if (!dateVal) {
+        targetSelect.innerHTML = "<option value=''>日付を選択してください</option>";
+        return;
+      }
+
+      const d = new Date(dateVal + "T00:00:00");
+      const days = ["日", "月", "火", "水", "木", "金", "土"];
+      const formattedDateStr = `${d.getMonth() + 1}/${d.getDate()}(${days[d.getDay()]})`;
+
+      let myPieces = [];
+      currentConcerts.forEach(c => {
+        Object.keys(c.userRoster).forEach(piece => {
+          const part = c.userRoster[piece];
+          if (part && part !== "不参加") {
+            myPieces.push({ concertTitle: c.title, piece, part });
+          }
+        });
+      });
+
+      const defaultOpt = document.createElement("option");
+      defaultOpt.value = `${formattedDateStr} 全体合奏`;
+      defaultOpt.textContent = `${formattedDateStr} 全体合奏`;
+      targetSelect.appendChild(defaultOpt);
+
+      if (myPieces.length > 0) {
+        myPieces.forEach(p => {
+          const opt = document.createElement("option");
+          const valStr = `${formattedDateStr} ${p.piece}`;
+          opt.value = valStr;
+          opt.textContent = `${valStr} [担当: ${p.part}]`;
+          targetSelect.appendChild(opt);
+        });
+      }
+    }
+
     document.getElementById("attendance-form").onsubmit = async (e) => {
       e.preventDefault();
       const btn = document.getElementById("att-submit-btn");
@@ -310,6 +353,7 @@
         userId: currentUser.userId,
         name: currentUser.name,
         date: document.getElementById("att-date").value,
+        targetPiece: document.getElementById("att-target").value,
         status: document.getElementById("att-status").value,
         note: document.getElementById("att-note").value
       });
@@ -323,7 +367,6 @@
       }
     };
 
-    // 通信用共通関数 (CORS回避のため text/plain で送信)
     async function apiCall(payload) {
       try {
         const response = await fetch(GAS_URL, {
@@ -333,7 +376,7 @@
         });
         return await response.json();
       } catch (err) {
-        alert("通信エラーが発生しました。インターネット接続やURL設定を確認してください。");
+        alert("通信エラーが発生しました。");
         console.error(err);
         return null;
       }
