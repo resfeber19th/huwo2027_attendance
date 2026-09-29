@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>吹奏楽団 ポータル＆出欠管理</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 15px; background: #f4f6f8; color: #333; }
+    .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 15px; }
+    .hidden { display: none; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 14px; }
+    input, select, textarea, button { width: 100%; padding: 12px; font-size: 15px; border: 1px solid #ccc; border-radius: 6px; }
+    button { background: #1a73e8; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 5px; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    .btn-secondary { background: #5f6368; margin-top: 0; }
+    .concert-item { padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 10px; cursor: pointer; background: #fff; transition: background 0.2s; }
+    .concert-item:hover { background: #e8f0fe; }
+    .piece-card { padding: 12px; border: 1px solid #eee; border-radius: 6px; background: #fafafa; margin-bottom: 12px; }
+    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+  </style>
+</head>
+<body>
+
+  <!-- 1. ログイン画面 -->
+  <div id="view-login" class="card">
+    <h2 style="margin-top:0;">団員ログイン</h2>
+    <div class="form-group">
+      <label for="login-id">ユーザーID</label>
+      <input type="text" id="login-id" placeholder="例: u001">
+    </div>
+    <div class="form-group">
+      <label for="login-pass">パスワード</label>
+      <input type="password" id="login-pass">
+    </div>
+    <button id="login-btn" onclick="login()">ログイン</button>
+    <p id="login-msg" style="color:red; margin-top: 10px; text-align: center;"></p>
+  </div>
+
+  <!-- 2. ホーム画面 -->
+  <div id="view-home" class="hidden">
+    <div class="header-bar">
+      <h3 style="margin:0;"><span id="user-name"></span> さん</h3>
+      <button onclick="logout()" style="width: auto; padding: 6px 12px;" class="btn-secondary">ログアウト</button>
+    </div>
+
+    <!-- 合奏出欠入力カード -->
+    <div class="card" style="border-left: 5px solid #1a73e8;">
+      <h3 style="margin-top:0;">📅 合奏出欠確認</h3>
+      <p style="font-size:13px; color:#666;">次回の練習日の出欠を入力・変更できます。</p>
+      <button onclick="showAttendanceForm()">合奏出欠を入力する</button>
+    </div>
+
+    <!-- 演奏会一覧カード -->
+    <div class="card">
+      <h3 style="margin-top:0;">🎼 演奏会・乗番設定</h3>
+      <p style="font-size:13px; color:#666;">タップして曲ごとの乗り番や持ち替えパートを登録します。</p>
+      <div id="concert-list">読み込み中...</div>
+    </div>
+  </div>
+
+  <!-- 3. 乗番・パート設定画面 -->
+  <div id="view-roster" class="card hidden">
+    <button onclick="showHome()" class="btn-secondary" style="margin-bottom: 15px; width: auto; padding: 6px 12px;">← ホームへ戻る</button>
+    <h3 id="roster-concert-title" style="margin-top:0;"></h3>
+    <form id="roster-form">
+      <div id="pieces-container"></div>
+      <button type="submit" id="roster-submit-btn">乗番情報を保存する</button>
+    </form>
+  </div>
+
+  <!-- 4. 合奏出欠入力画面 -->
+  <div id="view-attendance" class="card hidden">
+    <button onclick="showHome()" class="btn-secondary" style="margin-bottom: 15px; width: auto; padding: 6px 12px;">← ホームへ戻る</button>
+    <h3 style="margin-top:0;">📅 合奏出欠入力</h3>
+    <form id="attendance-form">
+      <div class="form-group">
+        <label for="att-date">練習日</label>
+        <input type="date" id="att-date" required>
+      </div>
+      <div class="form-group">
+        <label for="att-status">出欠</label>
+        <select id="att-status" required>
+          <option value="出席">出席</option>
+          <option value="欠席">欠席</option>
+          <option value="遅刻">遅刻</option>
+          <option value="早退">早退</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="att-note">備考（遅刻早退の時間や理由など）</label>
+        <textarea id="att-note" rows="3" placeholder="例: 19:30から遅れて参加予定です"></textarea>
+      </div>
+      <button type="submit" id="att-submit-btn">出欠を送信する</button>
+    </form>
+  </div>
+
+  <script>
+    // ★★★ ここにStep 2で取得したGASの「ウェブアプリURL」を貼り付けます ★★★
+    const GAS_URL = "YOUR_GAS_WEB_APP_URL_HERE";
+
+    // パートごとの乗り番・持ち替えプリセット定義
+    const PART_OPTIONS = {
+      "Clarinet": ["1st Cl", "2nd Cl", "3rd Cl", "Es Cl", "Alto Cl", "Bass Cl", "ContraBass Cl", "不参加", "その他（直接入力）"],
+      "Trumpet": ["1st Tp", "2nd Tp", "3rd Tp", "Flugelhorn", "Cornet", "不参加", "その他（直接入力）"],
+      "Saxophone": ["Alto 1st", "Alto 2nd", "Tenor", "Baritone", "Soprano", "不参加", "その他（直接入力）"],
+      "Flute": ["1st Fl", "2nd Fl", "Piccolo", "不参加", "その他（直接入力）"],
+      "Percussion": ["Timpani", "Snare", "Mallets", "Aux", "不参加", "その他（直接入力）"],
+      "Euphonium": ["1st", "2nd", "Solo", "アシスト", "不参加", "その他（直接入力）"],
+      "Trombone": ["1st", "2nd", "3rd", "Bass Trb", "不参加", "その他（直接入力）"],
+      "Horn": ["1st", "2nd", "3rd", "4th", "不参加", "その他（直接入力）"],
+      "Tuba": ["1st", "2nd", "不参加", "その他（直接入力）"]
+    };
+
+    let currentUser = null;
+    let currentConcerts = [];
+    let selectedConcertId = null;
+
+    // 初期起動時のログイン状態復元
+    window.onload = () => {
+      const savedUser = localStorage.getItem("band_user");
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        showHome();
+      }
+    };
+
+    // 画面切り替えユーティリティ
+    function switchView(viewId) {
+      ["view-login", "view-home", "view-roster", "view-attendance"].forEach(id => {
+        document.getElementById(id).classList.add("hidden");
+      });
+      document.getElementById(viewId).classList.remove("hidden");
+    }
+
+    // ログイン処理
+    async function login() {
+      const userId = document.getElementById("login-id").value.trim();
+      const password = document.getElementById("login-pass").value.trim();
+      const msg = document.getElementById("login-msg");
+      const btn = document.getElementById("login-btn");
+
+      if (!userId || !password) {
+        msg.textContent = "IDとパスワードを入力してください。";
+        return;
+      }
+
+      btn.disabled = true;
+      msg.textContent = "通信中...";
+
+      const res = await apiCall({ action: "login", userId, password });
+      btn.disabled = false;
+
+      if (res && res.result === "success") {
+        msg.textContent = "";
+        currentUser = res.user;
+        localStorage.setItem("band_user", JSON.stringify(currentUser));
+        showHome();
+      } else {
+        msg.textContent = res ? res.message : "ログインに失敗しました。";
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("band_user");
+      currentUser = null;
+      document.getElementById("login-id").value = "";
+      document.getElementById("login-pass").value = "";
+      switchView("view-login");
+    }
+
+    // ホーム画面の表示 ＆ 演奏会一覧の取得
+    async function showHome() {
+      switchView("view-home");
+      document.getElementById("user-name").textContent = currentUser.name;
+      
+      const container = document.getElementById("concert-list");
+      container.innerHTML = "読み込み中...";
+
+      const res = await apiCall({ action: "getConcerts", userId: currentUser.userId });
+      if (res && res.result === "success") {
+        currentConcerts = res.concerts;
+        container.innerHTML = "";
+
+        if (res.concerts.length === 0) {
+          container.innerHTML = "<p style='color:#666;'>予定されている演奏会はありません。</p>";
+          return;
+        }
+
+        res.concerts.forEach(c => {
+          const div = document.createElement("div");
+          div.className = "concert-item";
+          div.innerHTML = `<strong>${c.title}</strong><br><small style="color:#666;">タップして乗番・パートを設定</small>`;
+          div.onclick = () => showRosterForm(c.concertId);
+          container.appendChild(div);
+        });
+      }
+    }
+
+    // 乗番登録フォームの生成
+    function showRosterForm(concertId) {
+      selectedConcertId = concertId;
+      const concert = currentConcerts.find(c => c.concertId === concertId);
+      document.getElementById("roster-concert-title").textContent = concert.title;
+      
+      const container = document.getElementById("pieces-container");
+      container.innerHTML = "";
+
+      const userPart = currentUser.defaultPart || "";
+      const options = PART_OPTIONS[userPart] || ["1st", "2nd", "3rd", "アシスト", "不参加", "その他（直接入力）"];
+
+      concert.pieces.forEach((piece, index) => {
+        const savedPart = concert.userRoster[piece] || "";
+        const isCustom = savedPart && !options.includes(savedPart);
+
+        const card = document.createElement("div");
+        card.className = "piece-card";
+        card.innerHTML = `
+          <div style="font-weight:bold; margin-bottom:8px;">${piece}</div>
+          <div style="display: flex; gap: 8px; flex-direction: column;">
+            <select id="select-part-${index}" onchange="toggleCustomInput(${index})">
+              <option value="">-- パートを選択 --</option>
+              ${options.map(opt => `<option value="${opt}" ${savedPart === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+            </select>
+            <input type="text" id="custom-part-${index}" placeholder="例: 1st (Es Cl持ち替え)" 
+                   value="${isCustom ? savedPart : ''}" 
+                   style="display: ${isCustom ? 'block' : 'none'}; margin-top:5px;">
+          </div>
+        `;
+        container.appendChild(card);
+
+        if (isCustom) {
+          document.getElementById(`select-part-${index}`).value = "その他（直接入力）";
+        }
+      });
+
+      switchView("view-roster");
+    }
+
+    // 自由入力の切り替え制御
+    function toggleCustomInput(index) {
+      const select = document.getElementById(`select-part-${index}`);
+      const customInput = document.getElementById(`custom-part-${index}`);
+      if (select.value === "その他（直接入力）") {
+        customInput.style.display = "block";
+        customInput.required = true;
+      } else {
+        customInput.style.display = "none";
+        customInput.required = false;
+      }
+    }
+
+    // 乗番送信処理
+    document.getElementById("roster-form").onsubmit = async (e) => {
+      e.preventDefault();
+      const concert = currentConcerts.find(c => c.concertId === selectedConcertId);
+      const roster = {};
+
+      concert.pieces.forEach((piece, index) => {
+        const select = document.getElementById(`select-part-${index}`);
+        const customInput = document.getElementById(`custom-part-${index}`);
+        
+        let finalPart = select.value;
+        if (finalPart === "その他（直接入力）") {
+          finalPart = customInput.value.trim();
+        }
+
+        if (finalPart) {
+          roster[piece] = finalPart;
+        }
+      });
+
+      const btn = document.getElementById("roster-submit-btn");
+      btn.disabled = true;
+      btn.textContent = "保存中...";
+
+      const res = await apiCall({
+        action: "saveRoster",
+        userId: currentUser.userId,
+        concertId: selectedConcertId,
+        roster
+      });
+
+      btn.disabled = false;
+      btn.textContent = "乗番情報を保存する";
+
+      if (res && res.result === "success") {
+        alert("乗番情報を保存しました！");
+        showHome();
+      }
+    };
+
+    // 出欠画面の表示
+    function showAttendanceForm() {
+      switchView("view-attendance");
+      // 今日の日付を初期値にセット
+      document.getElementById("att-date").value = new Date().toISOString().split('T')[0];
+    }
+
+    // 出欠送信処理
+    document.getElementById("attendance-form").onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("att-submit-btn");
+      btn.disabled = true;
+      btn.textContent = "送信中...";
+
+      const res = await apiCall({
+        action: "saveAttendance",
+        userId: currentUser.userId,
+        name: currentUser.name,
+        date: document.getElementById("att-date").value,
+        status: document.getElementById("att-status").value,
+        note: document.getElementById("att-note").value
+      });
+
+      btn.disabled = false;
+      btn.textContent = "出欠を送信する";
+
+      if (res && res.result === "success") {
+        alert("出欠を送信しました！");
+        showHome();
+      }
+    };
+
+    // 通信用共通関数 (CORS回避のため text/plain で送信)
+    async function apiCall(payload) {
+      try {
+        const response = await fetch(GAS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        return await response.json();
+      } catch (err) {
+        alert("通信エラーが発生しました。インターネット接続やURL設定を確認してください。");
+        console.error(err);
+        return null;
+      }
+    }
+  </script>
+</body>
+</html>
