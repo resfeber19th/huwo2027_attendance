@@ -343,7 +343,7 @@
 
       <div class="form-group">
         <label for="tech-concert">① 演奏会を選択</label>
-        <select id="tech-concert" onchange="loadTechStats()">
+        <select id="tech-concert" onchange="onTechConcertChanged()" required>
           <option value="">演奏会を選択してください</option>
         </select>
       </div>
@@ -351,7 +351,7 @@
       <div class="form-group">
         <label for="tech-date">② 合奏日（練習日）を選択</label>
         <select id="tech-date" onchange="loadTechStats()" required>
-          <option value="">練習日を選択してください</option>
+          <option value="">演奏会を先に選択してください</option>
         </select>
       </div>
 
@@ -367,7 +367,7 @@
   </footer>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzepvTPwUVXo98Faz1MaOtuG5Qv_gLLAeU-iYs1_pZvGeFqgbQjRccfqhZ1Af48vcg/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxblE_obaF8pmOWmwEcL53iduSYmAMH7ThUc-un-6roEDsJcQZBtwbI-Erw5Py19eu-/exec";
 
     const PART_OPTIONS = {
       "Clarinet": ["1st Cl", "2nd Cl", "3rd Cl", "Es Cl", "Alto Cl", "Bass Cl", "ContraBass Cl", "不参加", "その他（直接入力）"],
@@ -484,16 +484,13 @@
       const attCard = document.getElementById("card-attendance-view");
       const techCard = document.getElementById("card-tech-view");
 
-      // 判定：技術局アカウント（IDが "performance" または 氏名に "技術局" を含む）
       const isTechUser = currentUser && (currentUser.userId === "performance" || (currentUser.name && currentUser.name.includes("技術局")));
 
       if (isTechUser) {
-        // 技術局専用：一般用カードを非表示にし、技術局専用カードのみ表示
         if (rosterCard) rosterCard.classList.add("hidden");
         if (attCard) attCard.classList.add("hidden");
         if (techCard) techCard.classList.remove("hidden");
       } else {
-        // 一般団員用：通常カードを表示し、技術局専用カードを非表示
         if (rosterCard) rosterCard.classList.remove("hidden");
         if (attCard) attCard.classList.remove("hidden");
         if (techCard) techCard.classList.add("hidden");
