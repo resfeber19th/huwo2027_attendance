@@ -204,8 +204,8 @@
   </div>
 
   <script>
-    // ※ ご自身の Google Apps Script の Web アプリ URL に置き換えてください
-    const GAS_URL = "YOUR_GAS_WEB_APP_URL_HERE";
+    // 指定された GAS Web アプリ URL
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzepvTPwUVXo98Faz1MaOtuG5Qv_gLLAeU-iYs1_pZvGeFqgbQjRccfqhZ1Af48vcg/exec";
 
     const PART_OPTIONS = {
       "Clarinet": ["1st Cl", "2nd Cl", "3rd Cl", "Es Cl", "Alto Cl", "Bass Cl", "ContraBass Cl", "不参加", "その他（直接入力）"],
@@ -475,11 +475,6 @@
      * GAS通信用関数（通信エラー回避・詳細エラー取得対応）
      */
     async function apiCall(payload) {
-      if (!GAS_URL || GAS_URL === "YOUR_GAS_WEB_APP_URL_HERE") {
-        alert("GAS_URL が設定されていません。index.html内の URL を確認してください。");
-        return null;
-      }
-
       try {
         const response = await fetch(GAS_URL, {
           method: "POST",
