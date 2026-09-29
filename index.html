@@ -264,7 +264,7 @@
         <div id="home-attendance-status-container"></div>
       </div>
 
-      <!-- 優先度3: 技術局専用カード (#8e44ad) ※IDが "performance" のみ -->
+      <!-- 優先度3: 技術局専用カード (#8e44ad) ※名前が「技術局」を含む または IDが「performance」の場合のみ -->
       <div id="card-tech-view" class="card hidden" style="border-left: 5px solid #8e44ad;">
         <h3 style="margin-top:0; font-weight:700; font-size:16px;">📊 技術局専用</h3>
         <p style="font-size:13px; color:#666;">演奏会と合奏日ごとのパート別出席率を確認できます。</p>
@@ -481,7 +481,10 @@
       const techBtn = document.getElementById("home-tech-btn");
       const techCard = document.getElementById("card-tech-view");
 
-      if (currentUser && currentUser.userId === "performance") {
+      // 判定：ユーザーIDが "performance" または 氏名に「技術局」が含まれている場合
+      const isTechUser = currentUser && (currentUser.userId === "performance" || (currentUser.name && currentUser.name.includes("技術局")));
+
+      if (isTechUser) {
         if (techCard) techCard.classList.remove("hidden");
       } else {
         if (techCard) techCard.classList.add("hidden");
@@ -844,7 +847,6 @@
       const scheduledItems = (currentSchedules && Array.isArray(currentSchedules[dateVal])) ? currentSchedules[dateVal] : [];
       const userDefaultPart = (currentUser && currentUser.defaultPart) ? currentUser.defaultPart : "";
 
-      // 練習日程に登録されている項目のうち、選択された演奏会の曲（または基礎合奏）に合致するものだけを抽出
       let filteredItems = [];
       if (scheduledItems.length > 0) {
         scheduledItems.forEach(item => {
@@ -885,7 +887,6 @@
           }
         });
       } else {
-        // スケジュール未登録の場合は演奏会の曲一覧を展開
         const defaultOpt = document.createElement("option");
         defaultOpt.value = `${formattedDateStr} 基礎合奏`;
         defaultOpt.textContent = `${formattedDateStr} 基礎合奏`;
