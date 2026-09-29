@@ -247,16 +247,16 @@
         <button onclick="logout()" style="width: auto; padding: 6px 12px;" class="btn-secondary">ログアウト</button>
       </div>
 
-      <!-- 優先度1: 演奏会・乗番設定カード (#03af7a) -->
-      <div class="card" style="border-left: 5px solid #03af7a;">
-        <h3 style="margin-top:0; font-weight:700; font-size:16px;">🎼 演奏会・乗番設定</h3>
+      <!-- 一般団員向けカード：演奏会・乗番設定 (#03af7a) -->
+      <div id="card-roster-view" class="card" style="border-left: 5px solid #03af7a;">
+        <h3 style="margin-top:0; font-weight:700; font-size:16px;">演奏会・乗番設定</h3>
         <p style="font-size:13px; color:#666;">最初に曲ごとの乗り番や担当パートを登録してください。</p>
         <div id="concert-list">読み込み中...</div>
       </div>
 
-      <!-- 優先度2: 合奏出欠入力カード (#005aff) -->
-      <div class="card" style="border-left: 5px solid #005aff;">
-        <h3 style="margin-top:0; font-weight:700; font-size:16px;">📅 合奏出欠確認</h3>
+      <!-- 一般団員向けカード：合奏出欠確認 (#005aff) -->
+      <div id="card-attendance-view" class="card" style="border-left: 5px solid #005aff;">
+        <h3 style="margin-top:0; font-weight:700; font-size:16px;">合奏出欠確認</h3>
         <p style="font-size:13px; color:#666;">演奏会と練習日を指定して自分の登録状況の確認と出欠送信を行います。</p>
         
         <button id="home-att-btn" onclick="showAttendanceForm()" style="background: #005aff;" disabled>データ読み込み中...</button>
@@ -264,9 +264,9 @@
         <div id="home-attendance-status-container"></div>
       </div>
 
-      <!-- 優先度3: 技術局専用カード (#8e44ad) ※名前が「技術局」を含む または IDが「performance」の場合のみ -->
+      <!-- 技術局専用カード (#8e44ad) -->
       <div id="card-tech-view" class="card hidden" style="border-left: 5px solid #8e44ad;">
-        <h3 style="margin-top:0; font-weight:700; font-size:16px;">📊 技術局専用</h3>
+        <h3 style="margin-top:0; font-weight:700; font-size:16px;">技術局専用</h3>
         <p style="font-size:13px; color:#666;">演奏会と合奏日ごとのパート別出席率を確認できます。</p>
         <button id="home-tech-btn" onclick="showTechView()" style="background: #8e44ad;" disabled>データ読み込み中...</button>
       </div>
@@ -288,7 +288,7 @@
     <!-- 4. 合奏出欠入力・個人確認画面 -->
     <div id="view-attendance" class="card hidden">
       <button onclick="showHome()" class="btn-secondary" style="margin-bottom: 15px; width: auto; padding: 6px 12px;">← ホームへ戻る</button>
-      <h3 style="margin-top:0; font-weight:700; font-size:16px;">📅 合奏出欠確認・入力</h3>
+      <h3 style="margin-top:0; font-weight:700; font-size:16px;">合奏出欠確認・入力</h3>
 
       <div class="form-group">
         <label for="att-concert">① 演奏会を選択</label>
@@ -300,7 +300,7 @@
       <div class="form-group">
         <label for="att-date">② 練習日を選択</label>
         <select id="att-date" onchange="onDateChanged()" required>
-          <option value="">演奏会を先選択してください</option>
+          <option value="">演奏会を先に選択してください</option>
         </select>
       </div>
 
@@ -339,7 +339,7 @@
     <!-- 5. 技術局専用画面 -->
     <div id="view-tech" class="card hidden">
       <button onclick="showHome()" class="btn-secondary" style="margin-bottom: 15px; width: auto; padding: 6px 12px;">← ホームへ戻る</button>
-      <h3 style="margin-top:0; font-weight:700; font-size:16px; color:#8e44ad;">📊 技術局専用：パート別出席率</h3>
+      <h3 style="margin-top:0; font-weight:700; font-size:16px; color:#8e44ad;">技術局専用：パート別出席率</h3>
 
       <div class="form-group">
         <label for="tech-concert">① 演奏会を選択</label>
@@ -479,14 +479,23 @@
       const container = document.getElementById("concert-list");
       const attBtn = document.getElementById("home-att-btn");
       const techBtn = document.getElementById("home-tech-btn");
+      
+      const rosterCard = document.getElementById("card-roster-view");
+      const attCard = document.getElementById("card-attendance-view");
       const techCard = document.getElementById("card-tech-view");
 
-      // 判定：ユーザーIDが "performance" または 氏名に「技術局」が含まれている場合
+      // 判定：技術局アカウント（IDが "performance" または 氏名に "技術局" を含む）
       const isTechUser = currentUser && (currentUser.userId === "performance" || (currentUser.name && currentUser.name.includes("技術局")));
 
       if (isTechUser) {
+        // 技術局専用：一般用カードを非表示にし、技術局専用カードのみ表示
+        if (rosterCard) rosterCard.classList.add("hidden");
+        if (attCard) attCard.classList.add("hidden");
         if (techCard) techCard.classList.remove("hidden");
       } else {
+        // 一般団員用：通常カードを表示し、技術局専用カードを非表示
+        if (rosterCard) rosterCard.classList.remove("hidden");
+        if (attCard) attCard.classList.remove("hidden");
         if (techCard) techCard.classList.add("hidden");
       }
 
@@ -594,7 +603,7 @@
 
       container.innerHTML = `
         <div class="home-att-card">
-          <strong style="font-size:13px; color:#005aff;">📝 登録状況（${targetDate}）</strong>
+          <strong style="font-size:13px; color:#005aff;">登録状況（${targetDate}）</strong>
           <div style="margin-top:8px;">
             ${itemsHtml}
           </div>
@@ -747,7 +756,7 @@
       }
 
       const container = document.getElementById("my-attendance-status-container");
-      if (container) container.innerHTML = `<div class="my-att-card" style="background:#f9f9f9; border-color:#ddd;"><strong style="font-size:13px; color:#666;">📝 選択日のあなたの登録状況</strong><p style="font-size:13px; color:#888; margin:5px 0 0 0;">演奏会と練習日を選択してください。</p></div>`;
+      if (container) container.innerHTML = `<div class="my-att-card" style="background:#f9f9f9; border-color:#ddd;"><strong style="font-size:13px; color:#666;">選択日のあなたの登録状況</strong><p style="font-size:13px; color:#888; margin:5px 0 0 0;">演奏会と練習日を選択してください。</p></div>`;
       
       const targetSelect = document.getElementById("att-target");
       if (targetSelect) targetSelect.innerHTML = "<option value=''>演奏会と練習日を選択してください</option>";
@@ -785,7 +794,7 @@
       if (!dateVal || !currentUserAttendance || !currentUserAttendance[dateVal]) {
         container.innerHTML = `
           <div class="my-att-card" style="background:#f9f9f9; border-color:#ddd;">
-            <strong style="font-size:13px; color:#666;">📝 選択日のあなたの登録状況</strong>
+            <strong style="font-size:13px; color:#666;">選択日のあなたの登録状況</strong>
             <p style="font-size:13px; color:#888; margin:5px 0 0 0;">まだこの日の出欠登録はありません。</p>
           </div>
         `;
@@ -816,7 +825,7 @@
 
       container.innerHTML = `
         <div class="my-att-card">
-          <strong style="font-size:13px; color:#1a73e8;">📝 選択日のあなたの登録状況</strong>
+          <strong style="font-size:13px; color:#1a73e8;">選択日のあなたの登録状況</strong>
           <div style="margin-top:8px;">
             ${itemsHtml}
           </div>
@@ -997,7 +1006,7 @@
           }
 
           pieceCard.innerHTML = `
-            <div style="font-weight:bold; font-size:15px; margin-bottom:8px; color:#333;">🎵 ${item.pieceName}</div>
+            <div style="font-weight:bold; font-size:15px; margin-bottom:8px; color:#333;">${item.pieceName}</div>
             <table class="stats-table">
               <thead>
                 <tr>
