@@ -472,9 +472,11 @@
     };
 
     /**
-     * GAS通信用関数（通信エラー回避・詳細エラー取得対応）
+     * GAS通信用関数（管理者問い合わせメッセージ対応）
      */
     async function apiCall(payload) {
+      const contactAdminMsg = "\n\n問題が解決しない場合は、サイト管理者にお問い合わせください。";
+
       try {
         const response = await fetch(GAS_URL, {
           method: "POST",
@@ -488,12 +490,12 @@
 
         const resData = await response.json();
         if (resData.result === "error") {
-          alert("エラー: " + resData.message);
+          alert("エラー: " + resData.message + contactAdminMsg);
         }
         return resData;
       } catch (err) {
         console.error("API Error Detail:", err);
-        alert("通信エラーが発生しました。\n・GASのデプロイ設定（アクセス権: 全員）を確認してください。\n・詳細: " + err.message);
+        alert("通信エラーが発生しました。\n・詳細: " + err.message + contactAdminMsg);
         return null;
       }
     }
