@@ -35,7 +35,7 @@
     .app-header h1 {
       font-size: 20px;
       font-weight: 700;
-      color: #1a73e8;
+      color: #005aff;
       margin: 0;
     }
     .card {
@@ -66,20 +66,22 @@
       font-family: inherit;
     }
     button {
-      background: #1a73e8;
+      background: #005aff;
       color: white;
       border: none;
       font-weight: 700;
       cursor: pointer;
       margin-top: 5px;
-      transition: background 0.2s;
+      transition: background 0.2s, opacity 0.2s;
     }
     button:hover {
-      background: #1557b0;
+      background: #0046cb;
     }
     button:disabled {
-      background: #ccc;
+      background: #ccc !important;
+      color: #666 !important;
       cursor: not-allowed;
+      opacity: 0.8;
     }
     .btn-secondary {
       background: #5f6368;
@@ -108,8 +110,8 @@
       transition: background 0.2s, border-color 0.2s;
     }
     .concert-item:hover {
-      background: #e8f0fe;
-      border-color: #1a73e8;
+      background: #e6f7f2;
+      border-color: #03af7a;
     }
     .status-badge {
       font-size: 12px;
@@ -119,8 +121,8 @@
       white-space: nowrap;
     }
     .badge-success {
-      background-color: #e6f4ea;
-      color: #137333;
+      background-color: #e6f7f2;
+      color: #03af7a;
     }
     .badge-warning {
       background-color: #fef7e0;
@@ -151,6 +153,62 @@
     .btn-group button {
       margin-top: 0;
     }
+
+    /* ホーム画面用：個人登録状況カード表示 */
+    .home-att-card {
+      background: #f8f9fa;
+      border: 1px dashed #1a73e8;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 15px;
+    }
+    .my-att-card {
+      background: #e8f0fe;
+      border: 1px solid #1a73e8;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 15px;
+    }
+    .my-att-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px dashed #abc7f5;
+      font-size: 14px;
+    }
+    .my-att-item:last-child {
+      border-bottom: none;
+    }
+
+    /* 技術局専用テーブル */
+    .stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    .stats-table th, .stats-table td {
+      border: 1px solid #e0e0e0;
+      padding: 8px 10px;
+      text-align: center;
+    }
+    .stats-table th {
+      background: #f1f3f4;
+      font-weight: 700;
+    }
+    .stats-table tr:nth-child(even) {
+      background: #fafafa;
+    }
+    .rate-badge {
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .rate-high { color: #137333; background: #e6f4ea; }
+    .rate-mid { color: #b06000; background: #fef7e0; }
+    .rate-low { color: #c5221f; background: #fce8e6; }
+
     .app-footer {
       text-align: center;
       padding: 20px 0 10px;
@@ -189,18 +247,30 @@
         <button onclick="logout()" style="width: auto; padding: 6px 12px;" class="btn-secondary">ログアウト</button>
       </div>
 
-      <!-- 優先度1: 演奏会・乗番設定カード -->
-      <div class="card" style="border-left: 5px solid #34a853;">
+      <!-- 優先度1: 演奏会・乗番設定カード (#03af7a) -->
+      <div class="card" style="border-left: 5px solid #03af7a;">
         <h3 style="margin-top:0; font-weight:700; font-size:16px;">🎼 演奏会・乗番設定</h3>
         <p style="font-size:13px; color:#666;">最初に曲ごとの乗り番や担当パートを登録してください。</p>
         <div id="concert-list">読み込み中...</div>
       </div>
 
-      <!-- 優先度2: 合奏出欠入力カード -->
-      <div class="card" style="border-left: 5px solid #1a73e8;">
+      <!-- 優先度2: 合奏出欠入力カード (#005aff) -->
+      <div class="card" style="border-left: 5px solid #005aff;">
         <h3 style="margin-top:0; font-weight:700; font-size:16px;">📅 合奏出欠確認</h3>
-        <p style="font-size:13px; color:#666;">練習日と対象曲（乗り番）を指定して出欠を入力します。</p>
-        <button onclick="showAttendanceForm()">合奏出欠を入力する</button>
+        <p style="font-size:13px; color:#666;">練習日を指定して自分の登録状況の確認と出欠送信を行います。</p>
+        
+        <!-- 読み込み中はロックされるボタン -->
+        <button id="home-att-btn" onclick="showAttendanceForm()" style="background: #005aff;" disabled>データ読み込み中...</button>
+        
+        <!-- ボタンの下に配置される登録状況エリア -->
+        <div id="home-attendance-status-container"></div>
+      </div>
+
+      <!-- 優先度3: 技術局専用カード (#8e44ad) -->
+      <div class="card" style="border-left: 5px solid #8e44ad;">
+        <h3 style="margin-top:0; font-weight:700; font-size:16px;">📊 技術局専用</h3>
+        <p style="font-size:13px; color:#666;">演奏会と合奏日ごとのパート別出席率を確認できます。</p>
+        <button id="home-tech-btn" onclick="showTechView()" style="background: #8e44ad;" disabled>データ読み込み中...</button>
       </div>
     </div>
 
@@ -212,22 +282,29 @@
         <div id="pieces-container"></div>
         <div class="btn-group">
           <button type="button" class="btn-warning" onclick="submitRoster('一時保存')">一時保存する</button>
-          <button type="button" onclick="submitRoster('確定')">保存する（確定）</button>
+          <button type="button" style="background: #03af7a;" onclick="submitRoster('確定')">保存する（確定）</button>
         </div>
       </form>
     </div>
 
-    <!-- 4. 合奏出欠入力画面 -->
+    <!-- 4. 合奏出欠入力・個人確認画面 -->
     <div id="view-attendance" class="card hidden">
       <button onclick="showHome()" class="btn-secondary" style="margin-bottom: 15px; width: auto; padding: 6px 12px;">← ホームへ戻る</button>
-      <h3 style="margin-top:0; font-weight:700; font-size:16px;">📅 合奏出欠入力</h3>
-      
-      <form id="attendance-form">
-        <div class="form-group">
-          <label for="att-date">練習日を選択</label>
-          <input type="date" id="att-date" onchange="updateTargetPieces()" required>
-        </div>
+      <h3 style="margin-top:0; font-weight:700; font-size:16px;">📅 合奏出欠確認・入力</h3>
 
+      <div class="form-group">
+        <label for="att-date">練習日を選択</label>
+        <input type="date" id="att-date" onchange="onDateChanged()" required>
+      </div>
+
+      <!-- 自分の送信済み登録状況を表示するエリア -->
+      <div id="my-attendance-status-container"></div>
+
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+      <!-- 出欠送信フォーム -->
+      <form id="attendance-form">
+        <h4 style="margin: 0 0 10px 0; font-size:15px;">新規 / 変更送信</h4>
         <div class="form-group">
           <label for="att-target">対象曲・練習項目</label>
           <select id="att-target" required>
@@ -238,8 +315,8 @@
         <div class="form-group">
           <label for="att-status">出欠</label>
           <select id="att-status" required>
-            <option value="〇">〇</option>
-            <option value="✕">✕</option>
+            <option value="〇">〇（出席）</option>
+            <option value="✕">✕（欠席）</option>
             <option value="遅刻">遅刻</option>
             <option value="早退">早退</option>
           </select>
@@ -250,8 +327,30 @@
           <textarea id="att-note" rows="3" placeholder="例: 19:30から遅れて参加予定です"></textarea>
         </div>
 
-        <button type="submit" id="att-submit-btn">出欠を送信する</button>
+        <button type="submit" id="att-submit-btn" style="background: #005aff;">出欠を送信する</button>
       </form>
+    </div>
+
+    <!-- 5. 技術局専用画面 -->
+    <div id="view-tech" class="card hidden">
+      <button onclick="showHome()" class="btn-secondary" style="margin-bottom: 15px; width: auto; padding: 6px 12px;">← ホームへ戻る</button>
+      <h3 style="margin-top:0; font-weight:700; font-size:16px; color:#8e44ad;">📊 技術局専用：パート別出席率</h3>
+
+      <div class="form-group">
+        <label for="tech-concert">① 演奏会を選択</label>
+        <select id="tech-concert" onchange="loadTechStats()">
+          <option value="">演奏会を選択してください</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="tech-date">② 合奏日（練習日）を選択</label>
+        <input type="date" id="tech-date" onchange="loadTechStats()">
+      </div>
+
+      <div id="tech-stats-container" style="margin-top: 20px;">
+        <p style="color:#666; font-size:14px; text-align:center;">演奏会と合奏日を選択すると出席率が表示されます。</p>
+      </div>
     </div>
   </div>
 
@@ -261,7 +360,7 @@
   </footer>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbw1vZx7jWQ1DT11u3oOJrVyhalJbFuteUDjL5E-gHl2O5OJfa4r08SKhbCWrrDugnnV/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzepvTPwUVXo98Faz1MaOtuG5Qv_gLLAeU-iYs1_pZvGeFqgbQjRccfqhZ1Af48vcg/exec";
 
     const PART_OPTIONS = {
       "Clarinet": ["1st Cl", "2nd Cl", "3rd Cl", "Es Cl", "Alto Cl", "Bass Cl", "ContraBass Cl", "不参加", "その他（直接入力）"],
@@ -278,6 +377,7 @@
     let currentUser = null;
     let currentConcerts = [];
     let currentSchedules = {};
+    let currentUserAttendance = {};
     let selectedConcertId = null;
 
     window.onload = () => {
@@ -315,7 +415,7 @@
     }
 
     function switchView(viewId) {
-      ["view-login", "view-home", "view-roster", "view-attendance"].forEach(id => {
+      ["view-login", "view-home", "view-roster", "view-attendance", "view-tech"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add("hidden");
       });
@@ -369,45 +469,119 @@
       if (uNameEl && currentUser) uNameEl.textContent = currentUser.name || "";
       
       const container = document.getElementById("concert-list");
-      if (!container) return;
-      container.innerHTML = "読み込み中...";
+      const attBtn = document.getElementById("home-att-btn");
+      const techBtn = document.getElementById("home-tech-btn");
+
+      if (container) container.innerHTML = "読み込み中...";
+      
+      // 読み込み中はボタンをロック
+      if (attBtn) {
+        attBtn.disabled = true;
+        attBtn.textContent = "データ読み込み中...";
+      }
+      if (techBtn) {
+        techBtn.disabled = true;
+        techBtn.textContent = "データ読み込み中...";
+      }
 
       const res = await apiCall({ action: "getConcerts", userId: currentUser ? currentUser.userId : "" });
       if (res && res.result === "success") {
         currentConcerts = Array.isArray(res.concerts) ? res.concerts : [];
         currentSchedules = res.schedules || {};
-        container.innerHTML = "";
+        currentUserAttendance = res.userAttendance || {};
 
-        if (currentConcerts.length === 0) {
-          container.innerHTML = "<p style='color:#666;'>予定されている演奏会はありません。</p>";
-          return;
+        if (container) {
+          container.innerHTML = "";
+          if (currentConcerts.length === 0) {
+            container.innerHTML = "<p style='color:#666;'>予定されている演奏会はありません。</p>";
+          } else {
+            currentConcerts.forEach(c => {
+              if (!c) return;
+              const div = document.createElement("div");
+              div.className = "concert-item";
+              
+              let badgeHtml = "";
+              if (c.status === "確定") {
+                badgeHtml = `<span class="status-badge badge-success">完了</span>`;
+              } else if (c.status === "一時保存") {
+                badgeHtml = `<span class="status-badge badge-warning">一時保存中</span>`;
+              } else {
+                badgeHtml = `<span class="status-badge badge-gray">未登録</span>`;
+              }
+
+              div.innerHTML = `
+                <div>
+                  <strong>${c.title || "演奏会"}</strong><br>
+                  <small style="color:#666;">タップして乗番・パートを設定</small>
+                </div>
+                ${badgeHtml}
+              `;
+              div.onclick = () => showRosterForm(c.concertId);
+              container.appendChild(div);
+            });
+          }
         }
 
-        currentConcerts.forEach(c => {
-          if (!c) return;
-          const div = document.createElement("div");
-          div.className = "concert-item";
-          
-          let badgeHtml = "";
-          if (c.status === "確定") {
-            badgeHtml = `<span class="status-badge badge-success">完了</span>`;
-          } else if (c.status === "一時保存") {
-            badgeHtml = `<span class="status-badge badge-warning">一時保存中</span>`;
-          } else {
-            badgeHtml = `<span class="status-badge badge-gray">未登録</span>`;
-          }
+        // 読み込み完了後にボタンのロックを解除
+        if (attBtn) {
+          attBtn.disabled = false;
+          attBtn.textContent = "合奏出欠を入力・確認する";
+        }
+        if (techBtn) {
+          techBtn.disabled = false;
+          techBtn.textContent = "技術局専用ページを開く";
+        }
 
-          div.innerHTML = `
-            <div>
-              <strong>${c.title || "演奏会"}</strong><br>
-              <small style="color:#666;">タップして乗番・パートを設定</small>
-            </div>
-            ${badgeHtml}
-          `;
-          div.onclick = () => showRosterForm(c.concertId);
-          container.appendChild(div);
-        });
+        // ホーム画面上に今日の登録状況を表示
+        renderHomeAttendanceStatus();
       }
+    }
+
+    // ホーム画面上に今日の自分の出欠登録状況をレンダリング
+    function renderHomeAttendanceStatus() {
+      const container = document.getElementById("home-attendance-status-container");
+      if (!container) return;
+
+      const today = new Date().toISOString().split('T')[0];
+      const records = currentUserAttendance ? currentUserAttendance[today] : null;
+
+      if (!records || records.length === 0) {
+        container.innerHTML = `
+          <div class="home-att-card">
+            <strong style="font-size:13px; color:#666;">📝 本日（${today}）の出欠登録：未登録</strong>
+          </div>
+        `;
+        return;
+      }
+
+      let itemsHtml = "";
+      records.forEach(r => {
+        let badgeColor = "#137333";
+        if (r.status === "✕") badgeColor = "#c5221f";
+        else if (r.status === "遅刻" || r.status === "早退") badgeColor = "#b06000";
+
+        const noteText = r.note ? `<br><small style="color:#666;">（備考: ${r.note}）</small>` : "";
+
+        itemsHtml += `
+          <div class="my-att-item">
+            <div>
+              <strong>${r.targetPiece}</strong>${noteText}
+            </div>
+            <div>
+              <span style="font-weight:bold; color:${badgeColor}; font-size:15px;">${r.status}</span>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = `
+        <div class="home-att-card">
+          <strong style="font-size:13px; color:#005aff;">📝 本日のあなたの出欠登録状況</strong>
+          <div style="margin-top:8px;">
+            ${itemsHtml}
+          </div>
+        </div>
+      `;
     }
 
     function showRosterForm(concertId) {
@@ -507,6 +681,8 @@
       }
     }
 
+    /* ---------------- 出欠確認・送信 ---------------- */
+
     function showAttendanceForm() {
       switchView("view-attendance");
       const dateEl = document.getElementById("att-date");
@@ -514,7 +690,59 @@
         const today = new Date().toISOString().split('T')[0];
         dateEl.value = today;
       }
+      onDateChanged();
+    }
+
+    function onDateChanged() {
+      renderMyAttendanceStatus();
       updateTargetPieces();
+    }
+
+    function renderMyAttendanceStatus() {
+      const dateVal = document.getElementById("att-date")?.value;
+      const container = document.getElementById("my-attendance-status-container");
+      if (!container) return;
+
+      if (!dateVal || !currentUserAttendance || !currentUserAttendance[dateVal]) {
+        container.innerHTML = `
+          <div class="my-att-card" style="background:#f9f9f9; border-color:#ddd;">
+            <strong style="font-size:13px; color:#666;">📝 選択日のあなたの登録状況</strong>
+            <p style="font-size:13px; color:#888; margin:5px 0 0 0;">まだこの日の出欠登録はありません。</p>
+          </div>
+        `;
+        return;
+      }
+
+      const records = currentUserAttendance[dateVal];
+      let itemsHtml = "";
+
+      records.forEach(r => {
+        let badgeColor = "#137333";
+        if (r.status === "✕") badgeColor = "#c5221f";
+        else if (r.status === "遅刻" || r.status === "早退") badgeColor = "#b06000";
+
+        const noteText = r.note ? `<br><small style="color:#666;">（備考: ${r.note}）</small>` : "";
+
+        itemsHtml += `
+          <div class="my-att-item">
+            <div>
+              <strong>${r.targetPiece}</strong>${noteText}
+            </div>
+            <div>
+              <span style="font-weight:bold; color:${badgeColor}; font-size:15px;">${r.status}</span>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = `
+        <div class="my-att-card">
+          <strong style="font-size:13px; color:#1a73e8;">📝 選択日のあなたの登録状況</strong>
+          <div style="margin-top:8px;">
+            ${itemsHtml}
+          </div>
+        </div>
+      `;
     }
 
     function updateTargetPieces() {
@@ -594,6 +822,107 @@
           opt.setAttribute("data-part", p.part);
           targetSelect.appendChild(opt);
         });
+      }
+    }
+
+    /* ---------------- 技術局専用機能 ---------------- */
+
+    function showTechView() {
+      switchView("view-tech");
+
+      const concertSelect = document.getElementById("tech-concert");
+      const dateInput = document.getElementById("tech-date");
+
+      if (concertSelect) {
+        concertSelect.innerHTML = "<option value=''>演奏会を選択してください</option>";
+        currentConcerts.forEach(c => {
+          if (!c) return;
+          const opt = document.createElement("option");
+          opt.value = c.concertId;
+          opt.textContent = c.title || "演奏会";
+          concertSelect.appendChild(opt);
+        });
+      }
+
+      if (dateInput && !dateInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+      }
+
+      loadTechStats();
+    }
+
+    async function loadTechStats() {
+      const concertId = document.getElementById("tech-concert")?.value;
+      const dateVal = document.getElementById("tech-date")?.value;
+      const container = document.getElementById("tech-stats-container");
+
+      if (!container) return;
+
+      if (!concertId || !dateVal) {
+        container.innerHTML = "<p style='color:#666; font-size:14px; text-align:center;'>演奏会と合奏日の両方を選択してください。</p>";
+        return;
+      }
+
+      container.innerHTML = "<p style='color:#666; font-size:14px; text-align:center;'>集計中...</p>";
+
+      const res = await apiCall({
+        action: "getStats",
+        concertId: concertId,
+        date: dateVal
+      });
+
+      if (res && res.result === "success") {
+        const stats = Array.isArray(res.stats) ? res.stats : [];
+        container.innerHTML = "";
+
+        if (stats.length === 0) {
+          container.innerHTML = "<p style='color:#666;'>該当する曲データがありません。</p>";
+          return;
+        }
+
+        stats.forEach(item => {
+          const pieceCard = document.createElement("div");
+          pieceCard.className = "piece-card";
+
+          let rowsHtml = "";
+          if (item.parts && item.parts.length > 0) {
+            item.parts.forEach(p => {
+              let rateClass = "rate-low";
+              if (p.rate >= 80) rateClass = "rate-high";
+              else if (p.rate >= 50) rateClass = "rate-mid";
+
+              rowsHtml += `
+                <tr>
+                  <td style="text-align:left; font-weight:500;">${p.partName}</td>
+                  <td>${p.presentCount} / ${p.rosterCount} 人</td>
+                  <td><span class="rate-badge ${rateClass}">${p.rate}%</span></td>
+                </tr>
+              `;
+            });
+          } else {
+            rowsHtml = `<tr><td colspan="3" style="color:#888;">乗番登録データがありません</td></tr>`;
+          }
+
+          pieceCard.innerHTML = `
+            <div style="font-weight:bold; font-size:15px; margin-bottom:8px; color:#333;">🎵 ${item.pieceName}</div>
+            <table class="stats-table">
+              <thead>
+                <tr>
+                  <th>パート</th>
+                  <th>出席 / 乗番</th>
+                  <th>出席率</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+          `;
+          container.appendChild(pieceCard);
+        });
+      } else {
+        container.innerHTML = "<p style='color:red; text-align:center;'>集計データの取得に失敗しました。</p>";
       }
     }
 
