@@ -3,29 +3,123 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HUWO2027 出席登録フォーム</title>
+  <title>HUWO2027 出席登録</title>
+  
+  <!-- Noto Sans JP の読み込み -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 15px; background: #f4f6f8; color: #333; }
-    .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 15px; }
-    .hidden { display: none; }
-    .form-group { margin-bottom: 15px; }
-    label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 14px; }
-    input, select, textarea, button { width: 100%; padding: 12px; font-size: 15px; border: 1px solid #ccc; border-radius: 6px; }
-    button { background: #1a73e8; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 5px; }
-    button:disabled { background: #ccc; cursor: not-allowed; }
-    .btn-secondary { background: #5f6368; margin-top: 0; }
-    .concert-item { padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 10px; cursor: pointer; background: #fff; transition: background 0.2s; }
-    .concert-item:hover { background: #e8f0fe; }
-    .piece-card { padding: 12px; border: 1px solid #eee; border-radius: 6px; background: #fafafa; margin-bottom: 12px; }
-    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: "Noto Sans JP", -apple-system, BlinkMacSystemFont, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 15px;
+      background: #f4f6f8;
+      color: #333;
+    }
+    .app-header {
+      text-align: center;
+      padding: 10px 0 15px;
+    }
+    .app-header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a73e8;
+      margin: 0;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 15px;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    input, select, textarea, button {
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-family: inherit;
+    }
+    button {
+      background: #1a73e8;
+      color: white;
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 5px;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #1557b0;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background: #5f6368;
+      margin-top: 0;
+    }
+    .btn-secondary:hover {
+      background: #474a4d;
+    }
+    .concert-item {
+      padding: 15px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      background: #fff;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .concert-item:hover {
+      background: #e8f0fe;
+      border-color: #1a73e8;
+    }
+    .piece-card {
+      padding: 12px;
+      border: 1px solid #eee;
+      border-radius: 6px;
+      background: #fafafa;
+      margin-bottom: 12px;
+    }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
   </style>
 </head>
 <body>
 
+  <!-- アプリヘッダー -->
+  <div class="app-header">
+    <h1>HUWO2027 出席登録</h1>
+  </div>
+
   <!-- 1. ログイン画面 -->
   <div id="view-login" class="card">
-    <h2 style="margin-top:0;">団員ログイン</h2>
+    <h2 style="margin-top:0; font-weight:700; font-size:18px;">団員ログイン</h2>
     <div class="form-group">
       <label for="login-id">ユーザーID</label>
       <input type="text" id="login-id" placeholder="例: u001">
@@ -35,26 +129,26 @@
       <input type="password" id="login-pass">
     </div>
     <button id="login-btn" onclick="login()">ログイン</button>
-    <p id="login-msg" style="color:red; margin-top: 10px; text-align: center;"></p>
+    <p id="login-msg" style="color:red; margin-top: 10px; text-align: center; font-size:14px;"></p>
   </div>
 
   <!-- 2. ホーム画面 -->
   <div id="view-home" class="hidden">
     <div class="header-bar">
-      <h3 style="margin:0;"><span id="user-name"></span> さん</h3>
+      <h3 style="margin:0; font-weight:700;"><span id="user-name"></span> さん</h3>
       <button onclick="logout()" style="width: auto; padding: 6px 12px;" class="btn-secondary">ログアウト</button>
     </div>
 
-    <!-- 優先度1: 演奏会・乗番設定カード（上配置） -->
+    <!-- 優先度1: 演奏会・乗番設定カード -->
     <div class="card" style="border-left: 5px solid #34a853;">
-      <h3 style="margin-top:0;">🎼 演奏会・乗番設定</h3>
+      <h3 style="margin-top:0; font-weight:700; font-size:16px;">🎼 演奏会・乗番設定</h3>
       <p style="font-size:13px; color:#666;">最初に曲ごとの乗り番や担当パートを登録してください。</p>
       <div id="concert-list">読み込み中...</div>
     </div>
 
     <!-- 優先度2: 合奏出欠入力カード -->
     <div class="card" style="border-left: 5px solid #1a73e8;">
-      <h3 style="margin-top:0;">📅 合奏出欠確認</h3>
+      <h3 style="margin-top:0; font-weight:700; font-size:16px;">📅 合奏出欠確認</h3>
       <p style="font-size:13px; color:#666;">練習日と対象曲（乗り番）を指定して出欠を入力します。</p>
       <button onclick="showAttendanceForm()">合奏出欠を入力する</button>
     </div>
@@ -63,7 +157,7 @@
   <!-- 3. 乗番・パート設定画面 -->
   <div id="view-roster" class="card hidden">
     <button onclick="showHome()" class="btn-secondary" style="margin-bottom: 15px; width: auto; padding: 6px 12px;">← ホームへ戻る</button>
-    <h3 id="roster-concert-title" style="margin-top:0;"></h3>
+    <h3 id="roster-concert-title" style="margin-top:0; font-weight:700; font-size:16px;"></h3>
     <form id="roster-form">
       <div id="pieces-container"></div>
       <button type="submit" id="roster-submit-btn">乗番情報を保存する</button>
@@ -73,7 +167,7 @@
   <!-- 4. 合奏出欠入力画面 -->
   <div id="view-attendance" class="card hidden">
     <button onclick="showHome()" class="btn-secondary" style="margin-bottom: 15px; width: auto; padding: 6px 12px;">← ホームへ戻る</button>
-    <h3 style="margin-top:0;">📅 合奏出欠入力</h3>
+    <h3 style="margin-top:0; font-weight:700; font-size:16px;">📅 合奏出欠入力</h3>
     
     <form id="attendance-form">
       <div class="form-group">
@@ -110,7 +204,8 @@
   </div>
 
   <script>
-    const GAS_URL = "YOUR_GAS_WEB_APP_URL_HERE"; // WebアプリURLを入力
+    // ※ ご自身の Google Apps Script の Web アプリ URL に置き換えてください
+    const GAS_URL = "YOUR_GAS_WEB_APP_URL_HERE";
 
     const PART_OPTIONS = {
       "Clarinet": ["1st Cl", "2nd Cl", "3rd Cl", "Es Cl", "Alto Cl", "Bass Cl", "ContraBass Cl", "不参加", "その他（直接入力）"],
@@ -166,7 +261,7 @@
         localStorage.setItem("band_user", JSON.stringify(currentUser));
         showHome();
       } else {
-        msg.textContent = res ? res.message : "ログインに失敗しました。";
+        msg.textContent = res ? res.message : "ログイン処理に失敗しました。";
       }
     }
 
@@ -326,17 +421,21 @@
         });
       });
 
+      // 1. 全体合奏
       const defaultOpt = document.createElement("option");
       defaultOpt.value = `${formattedDateStr} 全体合奏`;
       defaultOpt.textContent = `${formattedDateStr} 全体合奏`;
+      defaultOpt.setAttribute("data-part", currentUser.defaultPart || "");
       targetSelect.appendChild(defaultOpt);
 
+      // 2. 乗番のある各曲目
       if (myPieces.length > 0) {
         myPieces.forEach(p => {
           const opt = document.createElement("option");
           const valStr = `${formattedDateStr} ${p.piece}`;
           opt.value = valStr;
           opt.textContent = `${valStr} [担当: ${p.part}]`;
+          opt.setAttribute("data-part", p.part);
           targetSelect.appendChild(opt);
         });
       }
@@ -348,12 +447,17 @@
       btn.disabled = true;
       btn.textContent = "送信中...";
 
+      const targetSelect = document.getElementById("att-target");
+      const selectedOption = targetSelect.options[targetSelect.selectedIndex];
+      const detailPart = selectedOption ? selectedOption.getAttribute("data-part") || "" : "";
+
       const res = await apiCall({
         action: "saveAttendance",
         userId: currentUser.userId,
         name: currentUser.name,
         date: document.getElementById("att-date").value,
-        targetPiece: document.getElementById("att-target").value,
+        targetPiece: targetSelect.value,
+        detailPart: detailPart,
         status: document.getElementById("att-status").value,
         note: document.getElementById("att-note").value
       });
@@ -367,17 +471,34 @@
       }
     };
 
+    /**
+     * GAS通信用関数（通信エラー回避・詳細エラー取得対応）
+     */
     async function apiCall(payload) {
+      if (!GAS_URL || GAS_URL === "YOUR_GAS_WEB_APP_URL_HERE") {
+        alert("GAS_URL が設定されていません。index.html内の URL を確認してください。");
+        return null;
+      }
+
       try {
         const response = await fetch(GAS_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
-        return await response.json();
+
+        if (!response.ok) {
+          throw new Error(`HTTPステータスエラー: ${response.status}`);
+        }
+
+        const resData = await response.json();
+        if (resData.result === "error") {
+          alert("エラー: " + resData.message);
+        }
+        return resData;
       } catch (err) {
-        alert("通信エラーが発生しました。");
-        console.error(err);
+        console.error("API Error Detail:", err);
+        alert("通信エラーが発生しました。\n・GASのデプロイ設定（アクセス権: 全員）を確認してください。\n・詳細: " + err.message);
         return null;
       }
     }
