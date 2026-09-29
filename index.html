@@ -156,8 +156,8 @@
 
     /* ホーム画面用：個人登録状況カード表示 */
     .home-att-card {
-      background: #f8f9fa;
-      border: 1px dashed #1a73e8;
+      background: #e8f0fe;
+      border: 1px solid #1a73e8;
       border-radius: 8px;
       padding: 12px;
       margin-top: 15px;
@@ -257,17 +257,15 @@
       <!-- 優先度2: 合奏出欠入力カード (#005aff) -->
       <div class="card" style="border-left: 5px solid #005aff;">
         <h3 style="margin-top:0; font-weight:700; font-size:16px;">📅 合奏出欠確認</h3>
-        <p style="font-size:13px; color:#666;">練習日を指定して自分の登録状況の確認と出欠送信を行います。</p>
+        <p style="font-size:13px; color:#666;">演奏会と練習日を指定して自分の登録状況の確認と出欠送信を行います。</p>
         
-        <!-- 読み込み中はロックされるボタン -->
         <button id="home-att-btn" onclick="showAttendanceForm()" style="background: #005aff;" disabled>データ読み込み中...</button>
         
-        <!-- ボタンの下に配置される登録状況エリア -->
         <div id="home-attendance-status-container"></div>
       </div>
 
-      <!-- 優先度3: 技術局専用カード (#8e44ad) -->
-      <div class="card" style="border-left: 5px solid #8e44ad;">
+      <!-- 優先度3: 技術局専用カード (#8e44ad) ※IDが "performance" のみ -->
+      <div id="card-tech-view" class="card hidden" style="border-left: 5px solid #8e44ad;">
         <h3 style="margin-top:0; font-weight:700; font-size:16px;">📊 技術局専用</h3>
         <p style="font-size:13px; color:#666;">演奏会と合奏日ごとのパート別出席率を確認できます。</p>
         <button id="home-tech-btn" onclick="showTechView()" style="background: #8e44ad;" disabled>データ読み込み中...</button>
@@ -293,22 +291,29 @@
       <h3 style="margin-top:0; font-weight:700; font-size:16px;">📅 合奏出欠確認・入力</h3>
 
       <div class="form-group">
-        <label for="att-date">練習日を選択</label>
-        <input type="date" id="att-date" onchange="onDateChanged()" required>
+        <label for="att-concert">① 演奏会を選択</label>
+        <select id="att-concert" onchange="onConcertChanged()" required>
+          <option value="">演奏会を選択してください</option>
+        </select>
       </div>
 
-      <!-- 自分の送信済み登録状況を表示するエリア -->
+      <div class="form-group">
+        <label for="att-date">② 練習日を選択</label>
+        <select id="att-date" onchange="onDateChanged()" required>
+          <option value="">演奏会を先選択してください</option>
+        </select>
+      </div>
+
       <div id="my-attendance-status-container"></div>
 
       <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
 
-      <!-- 出欠送信フォーム -->
       <form id="attendance-form">
         <h4 style="margin: 0 0 10px 0; font-size:15px;">新規 / 変更送信</h4>
         <div class="form-group">
           <label for="att-target">対象曲・練習項目</label>
           <select id="att-target" required>
-            <option value="">日付を選択してください</option>
+            <option value="">練習日を選択してください</option>
           </select>
         </div>
 
@@ -345,7 +350,9 @@
 
       <div class="form-group">
         <label for="tech-date">② 合奏日（練習日）を選択</label>
-        <input type="date" id="tech-date" onchange="loadTechStats()">
+        <select id="tech-date" onchange="loadTechStats()" required>
+          <option value="">練習日を選択してください</option>
+        </select>
       </div>
 
       <div id="tech-stats-container" style="margin-top: 20px;">
@@ -360,7 +367,7 @@
   </footer>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzuJ-DYANGoPxoqcxO8kkaqba9NkiuyZpr0Hp5iZIExFqN_5pDqA6-G24VG75fVmQ8V/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzepvTPwUVXo98Faz1MaOtuG5Qv_gLLAeU-iYs1_pZvGeFqgbQjRccfqhZ1Af48vcg/exec";
 
     const PART_OPTIONS = {
       "Clarinet": ["1st Cl", "2nd Cl", "3rd Cl", "Es Cl", "Alto Cl", "Bass Cl", "ContraBass Cl", "不参加", "その他（直接入力）"],
@@ -377,6 +384,7 @@
     let currentUser = null;
     let currentConcerts = [];
     let currentSchedules = {};
+    let scheduleDatesList = [];
     let currentUserAttendance = {};
     let selectedConcertId = null;
 
@@ -471,10 +479,16 @@
       const container = document.getElementById("concert-list");
       const attBtn = document.getElementById("home-att-btn");
       const techBtn = document.getElementById("home-tech-btn");
+      const techCard = document.getElementById("card-tech-view");
+
+      if (currentUser && currentUser.userId === "performance") {
+        if (techCard) techCard.classList.remove("hidden");
+      } else {
+        if (techCard) techCard.classList.add("hidden");
+      }
 
       if (container) container.innerHTML = "読み込み中...";
       
-      // 読み込み中はボタンをロック
       if (attBtn) {
         attBtn.disabled = true;
         attBtn.textContent = "データ読み込み中...";
@@ -488,6 +502,7 @@
       if (res && res.result === "success") {
         currentConcerts = Array.isArray(res.concerts) ? res.concerts : [];
         currentSchedules = res.schedules || {};
+        scheduleDatesList = Array.isArray(res.scheduleDates) ? res.scheduleDates : [];
         currentUserAttendance = res.userAttendance || {};
 
         if (container) {
@@ -522,7 +537,6 @@
           }
         }
 
-        // 読み込み完了後にボタンのロックを解除
         if (attBtn) {
           attBtn.disabled = false;
           attBtn.textContent = "合奏出欠を入力・確認する";
@@ -532,25 +546,26 @@
           techBtn.textContent = "技術局専用ページを開く";
         }
 
-        // ホーム画面上に今日の登録状況を表示
         renderHomeAttendanceStatus();
       }
     }
 
-    // ホーム画面上に今日の自分の出欠登録状況をレンダリング
     function renderHomeAttendanceStatus() {
       const container = document.getElementById("home-attendance-status-container");
       if (!container) return;
 
-      const today = new Date().toISOString().split('T')[0];
-      const records = currentUserAttendance ? currentUserAttendance[today] : null;
+      const dates = Object.keys(currentUserAttendance || {});
+      if (dates.length === 0) {
+        container.innerHTML = "";
+        return;
+      }
+
+      const today = new Date().toLocaleDateString('sv-SE');
+      const targetDate = currentUserAttendance[today] ? today : dates.sort().pop();
+      const records = currentUserAttendance[targetDate];
 
       if (!records || records.length === 0) {
-        container.innerHTML = `
-          <div class="home-att-card">
-            <strong style="font-size:13px; color:#666;">📝 本日（${today}）の出欠登録：未登録</strong>
-          </div>
-        `;
+        container.innerHTML = "";
         return;
       }
 
@@ -576,7 +591,7 @@
 
       container.innerHTML = `
         <div class="home-att-card">
-          <strong style="font-size:13px; color:#005aff;">📝 本日のあなたの出欠登録状況</strong>
+          <strong style="font-size:13px; color:#005aff;">📝 登録状況（${targetDate}）</strong>
           <div style="margin-top:8px;">
             ${itemsHtml}
           </div>
@@ -683,12 +698,73 @@
 
     /* ---------------- 出欠確認・送信 ---------------- */
 
+    function populateConcertSelect(selectElementId) {
+      const selectEl = document.getElementById(selectElementId);
+      if (!selectEl) return;
+
+      selectEl.innerHTML = "<option value=''>演奏会を選択してください</option>";
+      currentConcerts.forEach(c => {
+        if (!c) return;
+        const opt = document.createElement("option");
+        opt.value = c.concertId;
+        opt.textContent = c.title || "演奏会";
+        selectEl.appendChild(opt);
+      });
+    }
+
+    function populateDateSelect(selectElementId, selectedVal = "") {
+      const selectEl = document.getElementById(selectElementId);
+      if (!selectEl) return;
+
+      selectEl.innerHTML = "<option value=''>練習日を選択してください</option>";
+      
+      if (scheduleDatesList.length > 0) {
+        scheduleDatesList.forEach(dateStr => {
+          const d = new Date(dateStr + "T00:00:00");
+          const days = ["日", "月", "火", "水", "木", "金", "土"];
+          const label = `${dateStr} (${days[d.getDay()]})`;
+
+          const opt = document.createElement("option");
+          opt.value = dateStr;
+          opt.textContent = label;
+          if (dateStr === selectedVal) opt.selected = true;
+          selectEl.appendChild(opt);
+        });
+      }
+    }
+
     function showAttendanceForm() {
       switchView("view-attendance");
+      populateConcertSelect("att-concert");
+      
       const dateEl = document.getElementById("att-date");
       if (dateEl) {
-        const today = new Date().toISOString().split('T')[0];
-        dateEl.value = today;
+        dateEl.innerHTML = "<option value=''>演奏会を先に選択してください</option>";
+        dateEl.disabled = true;
+      }
+
+      const container = document.getElementById("my-attendance-status-container");
+      if (container) container.innerHTML = `<div class="my-att-card" style="background:#f9f9f9; border-color:#ddd;"><strong style="font-size:13px; color:#666;">📝 選択日のあなたの登録状況</strong><p style="font-size:13px; color:#888; margin:5px 0 0 0;">演奏会と練習日を選択してください。</p></div>`;
+      
+      const targetSelect = document.getElementById("att-target");
+      if (targetSelect) targetSelect.innerHTML = "<option value=''>演奏会と練習日を選択してください</option>";
+    }
+
+    function onConcertChanged() {
+      const concertId = document.getElementById("att-concert")?.value;
+      const dateEl = document.getElementById("att-date");
+
+      if (!concertId) {
+        if (dateEl) {
+          dateEl.innerHTML = "<option value=''>演奏会を先に選択してください</option>";
+          dateEl.disabled = true;
+        }
+        return;
+      }
+
+      if (dateEl) {
+        dateEl.disabled = false;
+        populateDateSelect("att-date");
       }
       onDateChanged();
     }
@@ -746,16 +822,20 @@
     }
 
     function updateTargetPieces() {
+      const concertId = document.getElementById("att-concert")?.value;
       const dateEl = document.getElementById("att-date");
       const targetSelect = document.getElementById("att-target");
       if (!targetSelect) return;
       targetSelect.innerHTML = "";
 
       const dateVal = dateEl ? dateEl.value : "";
-      if (!dateVal) {
-        targetSelect.innerHTML = "<option value=''>日付を選択してください</option>";
+      if (!concertId || !dateVal) {
+        targetSelect.innerHTML = "<option value=''>演奏会と練習日を選択してください</option>";
         return;
       }
+
+      const selectedConcert = currentConcerts.find(c => c && c.concertId === concertId);
+      const concertPieces = selectedConcert && Array.isArray(selectedConcert.pieces) ? selectedConcert.pieces : [];
 
       const d = new Date(dateVal + "T00:00:00");
       const days = ["日", "月", "火", "水", "木", "金", "土"];
@@ -764,9 +844,20 @@
       const scheduledItems = (currentSchedules && Array.isArray(currentSchedules[dateVal])) ? currentSchedules[dateVal] : [];
       const userDefaultPart = (currentUser && currentUser.defaultPart) ? currentUser.defaultPart : "";
 
+      // 練習日程に登録されている項目のうち、選択された演奏会の曲（または基礎合奏）に合致するものだけを抽出
+      let filteredItems = [];
       if (scheduledItems.length > 0) {
         scheduledItems.forEach(item => {
           if (!item) return;
+          const pieceName = item.piece || "";
+          if (pieceName === "基礎合奏" || concertPieces.includes(pieceName)) {
+            filteredItems.push(item);
+          }
+        });
+      }
+
+      if (filteredItems.length > 0) {
+        filteredItems.forEach(item => {
           const pieceName = item.piece || "";
           const timeStr = item.time ? ` ${item.time}` : "";
 
@@ -779,11 +870,9 @@
             targetSelect.appendChild(opt);
           } else {
             let userPartForPiece = userDefaultPart;
-            currentConcerts.forEach(c => {
-              if (c && c.userRoster && c.userRoster[pieceName]) {
-                userPartForPiece = c.userRoster[pieceName];
-              }
-            });
+            if (selectedConcert && selectedConcert.userRoster && selectedConcert.userRoster[pieceName]) {
+              userPartForPiece = selectedConcert.userRoster[pieceName];
+            }
 
             if (userPartForPiece !== "不参加") {
               const opt = document.createElement("option");
@@ -796,31 +885,27 @@
           }
         });
       } else {
+        // スケジュール未登録の場合は演奏会の曲一覧を展開
         const defaultOpt = document.createElement("option");
         defaultOpt.value = `${formattedDateStr} 基礎合奏`;
         defaultOpt.textContent = `${formattedDateStr} 基礎合奏`;
         defaultOpt.setAttribute("data-part", userDefaultPart);
         targetSelect.appendChild(defaultOpt);
 
-        let myPieces = [];
-        currentConcerts.forEach(c => {
-          if (c && c.userRoster) {
-            Object.keys(c.userRoster).forEach(piece => {
-              const part = c.userRoster[piece];
-              if (part && part !== "不参加") {
-                myPieces.push({ concertTitle: c.title, piece, part });
-              }
-            });
+        concertPieces.forEach(piece => {
+          let userPartForPiece = userDefaultPart;
+          if (selectedConcert && selectedConcert.userRoster && selectedConcert.userRoster[piece]) {
+            userPartForPiece = selectedConcert.userRoster[piece];
           }
-        });
 
-        myPieces.forEach(p => {
-          const opt = document.createElement("option");
-          const valStr = `${formattedDateStr} ${p.piece}`;
-          opt.value = valStr;
-          opt.textContent = `${valStr} [担当: ${p.part}]`;
-          opt.setAttribute("data-part", p.part);
-          targetSelect.appendChild(opt);
+          if (userPartForPiece !== "不参加") {
+            const opt = document.createElement("option");
+            const valStr = `${formattedDateStr} ${piece}`;
+            opt.value = valStr;
+            opt.textContent = `${valStr} [担当: ${userPartForPiece}]`;
+            opt.setAttribute("data-part", userPartForPiece);
+            targetSelect.appendChild(opt);
+          }
         });
       }
     }
@@ -829,26 +914,32 @@
 
     function showTechView() {
       switchView("view-tech");
+      populateConcertSelect("tech-concert");
 
-      const concertSelect = document.getElementById("tech-concert");
-      const dateInput = document.getElementById("tech-date");
+      const dateEl = document.getElementById("tech-date");
+      if (dateEl) {
+        dateEl.innerHTML = "<option value=''>演奏会を先に選択してください</option>";
+        dateEl.disabled = true;
+      }
+      loadTechStats();
+    }
 
-      if (concertSelect) {
-        concertSelect.innerHTML = "<option value=''>演奏会を選択してください</option>";
-        currentConcerts.forEach(c => {
-          if (!c) return;
-          const opt = document.createElement("option");
-          opt.value = c.concertId;
-          opt.textContent = c.title || "演奏会";
-          concertSelect.appendChild(opt);
-        });
+    function onTechConcertChanged() {
+      const concertId = document.getElementById("tech-concert")?.value;
+      const dateEl = document.getElementById("tech-date");
+
+      if (!concertId) {
+        if (dateEl) {
+          dateEl.innerHTML = "<option value=''>演奏会を先に選択してください</option>";
+          dateEl.disabled = true;
+        }
+        return;
       }
 
-      if (dateInput && !dateInput.value) {
-        const today = new Date().toISOString().split('T')[0];
-        dateInput.value = today;
+      if (dateEl) {
+        dateEl.disabled = false;
+        populateDateSelect("tech-date");
       }
-
       loadTechStats();
     }
 
@@ -944,15 +1035,20 @@
         const statusEl = document.getElementById("att-status");
         const noteEl = document.getElementById("att-note");
 
+        const targetDate = dateEl ? dateEl.value : "";
+        const targetPieceVal = targetSelect ? targetSelect.value : "";
+        const statusVal = statusEl ? statusEl.value : "〇";
+        const noteVal = noteEl ? noteEl.value : "";
+
         const res = await apiCall({
           action: "saveAttendance",
           userId: currentUser ? currentUser.userId : "",
           name: currentUser ? currentUser.name : "",
-          date: dateEl ? dateEl.value : "",
-          targetPiece: targetSelect ? targetSelect.value : "",
+          date: targetDate,
+          targetPiece: targetPieceVal,
           detailPart: detailPart,
-          status: statusEl ? statusEl.value : "〇",
-          note: noteEl ? noteEl.value : ""
+          status: statusVal,
+          note: noteVal
         });
 
         if (btn) {
@@ -961,6 +1057,16 @@
         }
 
         if (res && res.result === "success") {
+          if (!currentUserAttendance[targetDate]) {
+            currentUserAttendance[targetDate] = [];
+          }
+          const existingIndex = currentUserAttendance[targetDate].findIndex(r => r.targetPiece === targetPieceVal);
+          if (existingIndex >= 0) {
+            currentUserAttendance[targetDate][existingIndex] = { targetPiece: targetPieceVal, status: statusVal, note: noteVal };
+          } else {
+            currentUserAttendance[targetDate].push({ targetPiece: targetPieceVal, status: statusVal, note: noteVal });
+          }
+
           alert("出欠を送信しました！");
           showHome();
         }
