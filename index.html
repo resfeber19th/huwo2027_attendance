@@ -154,7 +154,6 @@
       margin-top: 0;
     }
 
-    /* ホーム画面用：個人登録状況カード表示 */
     .home-att-card {
       background: #e8f0fe;
       border: 1px solid #1a73e8;
@@ -181,7 +180,6 @@
       border-bottom: none;
     }
 
-    /* 技術局専用テーブル */
     .stats-table {
       width: 100%;
       border-collapse: collapse;
@@ -247,14 +245,14 @@
         <button onclick="logout()" style="width: auto; padding: 6px 12px;" class="btn-secondary">ログアウト</button>
       </div>
 
-      <!-- 一般団員向けカード：演奏会・乗番設定 (#03af7a) -->
+      <!-- 一般団員向けカード：演奏会・乗番設定 -->
       <div id="card-roster-view" class="card" style="border-left: 5px solid #03af7a;">
         <h3 style="margin-top:0; font-weight:700; font-size:16px;">演奏会・乗番設定</h3>
         <p style="font-size:13px; color:#666;">最初に曲ごとの乗り番や担当パートを登録してください。</p>
         <div id="concert-list">読み込み中...</div>
       </div>
 
-      <!-- 一般団員向けカード：合奏出欠確認 (#005aff) -->
+      <!-- 一般団員向けカード：合奏出欠確認 -->
       <div id="card-attendance-view" class="card" style="border-left: 5px solid #005aff;">
         <h3 style="margin-top:0; font-weight:700; font-size:16px;">合奏出欠確認</h3>
         <p style="font-size:13px; color:#666;">演奏会と練習日を指定して自分の登録状況の確認と出欠送信を行います。</p>
@@ -264,7 +262,7 @@
         <div id="home-attendance-status-container"></div>
       </div>
 
-      <!-- 技術局専用カード (#8e44ad) -->
+      <!-- 技術局専用カード -->
       <div id="card-tech-view" class="card hidden" style="border-left: 5px solid #8e44ad;">
         <h3 style="margin-top:0; font-weight:700; font-size:16px;">技術局専用</h3>
         <p style="font-size:13px; color:#666;">演奏会と合奏日ごとのパート別出席率を確認できます。</p>
@@ -308,7 +306,7 @@
 
       <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
 
-      <form id="attendance-form">
+      <form id="attendance-form" onsubmit="submitAttendance(event)">
         <h4 style="margin: 0 0 10px 0; font-size:15px;">新規 / 変更送信</h4>
         <div class="form-group">
           <label for="att-target">対象曲・練習項目</label>
@@ -429,6 +427,19 @@
       });
       const target = document.getElementById(viewId);
       if (target) target.classList.remove("hidden");
+    }
+
+    async function apiCall(payload) {
+      try {
+        const response = await fetch(GAS_URL, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+        return await response.json();
+      } catch (err) {
+        console.error("API Error:", err);
+        return { result: "error", message: "通信エラーが発生しました。" };
+      }
     }
 
     async function login() {
@@ -569,7 +580,6 @@
         return;
       }
 
-      // 登録されている日付の中で最も直近（最新）の日付を1つだけ特定する
       const sortedDates = dates.sort();
       const latestDate = sortedDates[sortedDates.length - 1];
       const records = currentUserAttendance[latestDate];
@@ -599,7 +609,6 @@
         `;
       });
 
-      // 最新の登録状況のみを表示（複数日の履歴は表示しない）
       container.innerHTML = `
         <div class="home-att-card">
           <strong style="font-size:13px; color:#005aff;">最新の登録状況（${latestDate}）</strong>
@@ -832,6 +841,7 @@
       `;
     }
 
+    // 練習日程シートに登録されている曲目のみを厳格に表示する関数
     function updateTargetPieces() {
       const concertId = document.getElementById("att-concert")?.value;
       const dateEl = document.getElementById("att-date");
@@ -846,28 +856,17 @@
       }
 
       const selectedConcert = currentConcerts.find(c => c && c.concertId === concertId);
-      const concertPieces = selectedConcert && Array.isArray(selectedConcert.pieces) ? selectedConcert.pieces : [];
+      const userDefaultPart = (currentUser && currentUser.defaultPart) ? currentUser.defaultPart : "";
 
       const d = new Date(dateVal + "T00:00:00");
       const days = ["日", "月", "火", "水", "木", "金", "土"];
       const formattedDateStr = `${d.getMonth() + 1}/${d.getDate()}(${days[d.getDay()]})`;
 
       const scheduledItems = (currentSchedules && Array.isArray(currentSchedules[dateVal])) ? currentSchedules[dateVal] : [];
-      const userDefaultPart = (currentUser && currentUser.defaultPart) ? currentUser.defaultPart : "";
+      let validItems = scheduledItems.filter(item => item && item.concertId === concertId);
 
-      let filteredItems = [];
-      if (scheduledItems.length > 0) {
-        scheduledItems.forEach(item => {
-          if (!item) return;
-          const pieceName = item.piece || "";
-          if (pieceName === "基礎合奏" || concertPieces.includes(pieceName)) {
-            filteredItems.push(item);
-          }
-        });
-      }
-
-      if (filteredItems.length > 0) {
-        filteredItems.forEach(item => {
+      if (validItems.length > 0) {
+        validItems.forEach(item => {
           const pieceName = item.piece || "";
           const timeStr = item.time ? ` ${item.time}` : "";
 
@@ -896,26 +895,56 @@
         });
       } else {
         const defaultOpt = document.createElement("option");
-        defaultOpt.value = `${formattedDateStr} 基礎合奏`;
-        defaultOpt.textContent = `${formattedDateStr} 基礎合奏`;
-        defaultOpt.setAttribute("data-part", userDefaultPart);
+        defaultOpt.value = "";
+        defaultOpt.textContent = "この日の練習曲目データはありません";
         targetSelect.appendChild(defaultOpt);
+      }
+    }
 
-        concertPieces.forEach(piece => {
-          let userPartForPiece = userDefaultPart;
-          if (selectedConcert && selectedConcert.userRoster && selectedConcert.userRoster[piece]) {
-            userPartForPiece = selectedConcert.userRoster[piece];
-          }
+    async function submitAttendance(event) {
+      event.preventDefault();
+      const concertId = document.getElementById("att-concert")?.value;
+      const dateVal = document.getElementById("att-date")?.value;
+      const targetSelect = document.getElementById("att-target");
+      const targetPieceStr = targetSelect?.value;
+      const selectedOpt = targetSelect?.options[targetSelect.selectedIndex];
+      const part = selectedOpt ? selectedOpt.getAttribute("data-part") : "";
+      const status = document.getElementById("att-status")?.value;
+      const note = document.getElementById("att-note")?.value;
 
-          if (userPartForPiece !== "不参加") {
-            const opt = document.createElement("option");
-            const valStr = `${formattedDateStr} ${piece}`;
-            opt.value = valStr;
-            opt.textContent = `${valStr} [担当: ${userPartForPiece}]`;
-            opt.setAttribute("data-part", userPartForPiece);
-            targetSelect.appendChild(opt);
-          }
-        });
+      if (!concertId || !dateVal || !targetPieceStr) {
+        alert("練習日と対象曲を選択してください。");
+        return;
+      }
+
+      let targetPieceName = targetPieceStr;
+      const match = targetPieceStr.match(/^\d+\/\d+\([月火水木金土日]\)(?:\s+\S+)?\s+(.+)$/);
+      if (match && match[1]) {
+        targetPieceName = match[1].trim();
+      }
+
+      const res = await apiCall({
+        action: "saveAttendance",
+        userId: currentUser ? currentUser.userId : "",
+        name: currentUser ? currentUser.name : "",
+        date: dateVal,
+        targetPiece: targetPieceName,
+        part: part || "",
+        detailPart: "",
+        status: status,
+        note: note
+      });
+
+      if (res && res.result === "success") {
+        alert("出欠を送信しました！");
+        const homeRes = await apiCall({ action: "getConcerts", userId: currentUser ? currentUser.userId : "" });
+        if (homeRes && homeRes.result === "success") {
+          currentUserAttendance = homeRes.userAttendance || {};
+          currentSchedules = homeRes.schedules || {};
+        }
+        showHome();
+      } else {
+        alert("送信に失敗しました: " + (res ? res.message : "不明なエラー"));
       }
     }
 
@@ -956,11 +985,10 @@
       const concertId = document.getElementById("tech-concert")?.value;
       const dateVal = document.getElementById("tech-date")?.value;
       const container = document.getElementById("tech-stats-container");
-
       if (!container) return;
 
       if (!concertId || !dateVal) {
-        container.innerHTML = "<p style='color:#666; font-size:14px; text-align:center;'>演奏会と合奏日の両方を選択してください。</p>";
+        container.innerHTML = "<p style='color:#666; font-size:14px; text-align:center;'>演奏会と合奏日を選択してください。</p>";
         return;
       }
 
@@ -972,142 +1000,54 @@
         date: dateVal
       });
 
-      if (res && res.result === "success") {
-        const stats = Array.isArray(res.stats) ? res.stats : [];
-        container.innerHTML = "";
-
-        if (stats.length === 0) {
-          container.innerHTML = "<p style='color:#666;'>該当する曲データがありません。</p>";
+      if (res && res.result === "success" && Array.isArray(res.stats)) {
+        if (res.stats.length === 0) {
+          container.innerHTML = "<p style='color:#666; font-size:14px; text-align:center;'>対象のデータがありません。</p>";
           return;
         }
 
-        stats.forEach(item => {
-          const pieceCard = document.createElement("div");
-          pieceCard.className = "piece-card";
-
-          let rowsHtml = "";
-          if (item.parts && item.parts.length > 0) {
-            item.parts.forEach(p => {
-              let rateClass = "rate-low";
-              if (p.rate >= 80) rateClass = "rate-high";
-              else if (p.rate >= 50) rateClass = "rate-mid";
-
-              rowsHtml += `
-                <tr>
-                  <td style="text-align:left; font-weight:500;">${p.partName}</td>
-                  <td>${p.presentCount} / ${p.rosterCount} 人</td>
-                  <td><span class="rate-badge ${rateClass}">${p.rate}%</span></td>
-                </tr>
-              `;
-            });
-          } else {
-            rowsHtml = `<tr><td colspan="3" style="color:#888;">乗番登録データがありません</td></tr>`;
+        let html = "";
+        res.stats.forEach(st => {
+          html += `<h4 style="margin: 15px 0 5px 0; font-size:15px; color:#333;">🎵 ${st.pieceName}</h4>`;
+          if (!st.parts || st.parts.length === 0) {
+            html += "<p style='font-size:13px; color:#666;'>該当する乗番データがありません。</p>";
+            return;
           }
 
-          pieceCard.innerHTML = `
-            <div style="font-weight:bold; font-size:15px; margin-bottom:8px; color:#333;">${item.pieceName}</div>
+          html += `
             <table class="stats-table">
               <thead>
                 <tr>
                   <th>パート</th>
-                  <th>出席 / 乗番</th>
+                  <th>乗番人数</th>
+                  <th>出席人数</th>
                   <th>出席率</th>
                 </tr>
               </thead>
               <tbody>
-                ${rowsHtml}
-              </tbody>
-            </table>
           `;
-          container.appendChild(pieceCard);
+
+          st.parts.forEach(p => {
+            let rateClass = "rate-high";
+            if (p.rate < 50) rateClass = "rate-low";
+            else if (p.rate < 80) rateClass = "rate-mid";
+
+            html += `
+              <tr>
+                <td style="font-weight:700; text-align:left;">${p.partName}</td>
+                <td>${p.rosterCount}人</td>
+                <td>${p.presentCount}人</td>
+                <td><span class="rate-badge ${rateClass}">${p.rate}%</span></td>
+              </tr>
+            `;
+          });
+
+          html += `</tbody></table>`;
         });
+
+        container.innerHTML = html;
       } else {
-        container.innerHTML = "<p style='color:red; text-align:center;'>集計データの取得に失敗しました。</p>";
-      }
-    }
-
-    const attForm = document.getElementById("attendance-form");
-    if (attForm) {
-      attForm.onsubmit = async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById("att-submit-btn");
-        if (btn) {
-          btn.disabled = true;
-          btn.textContent = "送信中...";
-        }
-
-        const targetSelect = document.getElementById("att-target");
-        const selectedOption = targetSelect ? targetSelect.options[targetSelect.selectedIndex] : null;
-        const detailPart = selectedOption ? (selectedOption.getAttribute("data-part") || "") : "";
-
-        const dateEl = document.getElementById("att-date");
-        const statusEl = document.getElementById("att-status");
-        const noteEl = document.getElementById("att-note");
-
-        const targetDate = dateEl ? dateEl.value : "";
-        const targetPieceVal = targetSelect ? targetSelect.value : "";
-        const statusVal = statusEl ? statusEl.value : "〇";
-        const noteVal = noteEl ? noteEl.value : "";
-
-        const res = await apiCall({
-          action: "saveAttendance",
-          userId: currentUser ? currentUser.userId : "",
-          name: currentUser ? currentUser.name : "",
-          date: targetDate,
-          targetPiece: targetPieceVal,
-          detailPart: detailPart,
-          status: statusVal,
-          note: noteVal
-        });
-
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = "出欠を送信する";
-        }
-
-        if (res && res.result === "success") {
-          if (!currentUserAttendance[targetDate]) {
-            currentUserAttendance[targetDate] = [];
-          }
-          const existingIndex = currentUserAttendance[targetDate].findIndex(r => r.targetPiece === targetPieceVal);
-          if (existingIndex >= 0) {
-            currentUserAttendance[targetDate][existingIndex] = { targetPiece: targetPieceVal, status: statusVal, note: noteVal };
-          } else {
-            currentUserAttendance[targetDate].push({ targetPiece: targetPieceVal, status: statusVal, note: noteVal });
-          }
-
-          alert("出欠を送信しました！");
-          showHome();
-        }
-      };
-    }
-
-    /**
-     * GAS通信用関数
-     */
-    async function apiCall(payload) {
-      const contactAdminMsg = "\n\n問題が解決しない場合は、サイト管理者にお問い合わせください。";
-
-      try {
-        const response = await fetch(GAS_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTPステータスエラー: ${response.status}`);
-        }
-
-        const resData = await response.json();
-        if (resData && resData.result === "error") {
-          alert("エラー: " + resData.message + contactAdminMsg);
-        }
-        return resData;
-      } catch (err) {
-        console.error("API Error Detail:", err);
-        alert("通信エラーが発生しました。\n・詳細: " + err.message + contactAdminMsg);
-        return null;
+        container.innerHTML = "<p style='color:red; font-size:14px; text-align:center;'>集計データの取得に失敗しました。</p>";
       }
     }
   </script>
