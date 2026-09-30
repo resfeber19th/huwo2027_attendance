@@ -569,9 +569,10 @@
         return;
       }
 
-      const today = new Date().toLocaleDateString('sv-SE');
-      const targetDate = currentUserAttendance[today] ? today : dates.sort().pop();
-      const records = currentUserAttendance[targetDate];
+      // 登録されている日付の中で最も直近（最新）の日付を1つだけ特定する
+      const sortedDates = dates.sort();
+      const latestDate = sortedDates[sortedDates.length - 1];
+      const records = currentUserAttendance[latestDate];
 
       if (!records || records.length === 0) {
         container.innerHTML = "";
@@ -598,9 +599,10 @@
         `;
       });
 
+      // 最新の登録状況のみを表示（複数日の履歴は表示しない）
       container.innerHTML = `
         <div class="home-att-card">
-          <strong style="font-size:13px; color:#005aff;">登録状況（${targetDate}）</strong>
+          <strong style="font-size:13px; color:#005aff;">最新の登録状況（${latestDate}）</strong>
           <div style="margin-top:8px;">
             ${itemsHtml}
           </div>
