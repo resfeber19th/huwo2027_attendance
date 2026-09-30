@@ -3,1052 +3,431 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HUWO2027 出席登録</title>
-  
-  <!-- Noto Sans JP の読み込み -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-
+  <title>吹奏楽団 出欠・乗番管理システム</title>
   <style>
-    * {
-      box-sizing: border-box;
+    :root {
+      --primary-color: #2c3e50;
+      --secondary-color: #3498db;
+      --success-color: #27ae60;
+      --danger-color: #e74c3c;
+      --bg-color: #f8f9fa;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+      --border-color: #dddddd;
     }
+
     body {
-      font-family: "Noto Sans JP", -apple-system, BlinkMacSystemFont, sans-serif;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 15px;
-      background: #f4f6f8;
-      color: #333;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    .main-content {
-      flex: 1;
-    }
-    .app-header {
-      text-align: center;
-      padding: 10px 0 15px;
-    }
-    .app-header h1 {
-      font-size: 20px;
-      font-weight: 700;
-      color: #005aff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
       margin: 0;
+      padding: 0;
+      line-height: 1.6;
     }
+
+    header {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      position: relative;
+    }
+
+    .header-content {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .user-info {
+      font-size: 0.95rem;
+    }
+
+    .logout-btn {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .logout-btn:hover { background-color: #c0392b; }
+
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 0 15px;
+    }
+
     .card {
-      background: white;
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      margin-bottom: 15px;
+      margin-bottom: 20px;
     }
-    .hidden {
-      display: none !important;
+
+    h2, h3 {
+      margin-top: 0;
+      color: var(--primary-color);
     }
+
     .form-group {
       margin-bottom: 15px;
     }
+
     label {
       display: block;
-      font-weight: 700;
-      margin-bottom: 6px;
-      font-size: 14px;
+      margin-bottom: 5px;
+      font-weight: bold;
     }
-    input, select, textarea, button {
+
+    input[type="text"],
+    input[type="password"],
+    select,
+    textarea {
       width: 100%;
-      padding: 12px;
-      font-size: 15px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-family: inherit;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 1rem;
     }
-    button {
-      background: #005aff;
+
+    button.primary-btn {
+      background-color: var(--secondary-color);
       color: white;
       border: none;
-      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 4px;
       cursor: pointer;
-      margin-top: 5px;
-      transition: background 0.2s, opacity 0.2s;
+      font-size: 1rem;
+      width: 100%;
     }
-    button:hover {
-      background: #0046cb;
-    }
-    button:disabled {
-      background: #ccc !important;
-      color: #666 !important;
-      cursor: not-allowed;
-      opacity: 0.8;
-    }
-    .btn-secondary {
-      background: #5f6368;
-      margin-top: 0;
-    }
-    .btn-secondary:hover {
-      background: #474a4d;
-    }
-    .btn-warning {
-      background: #f2994a;
-      color: white;
-    }
-    .btn-warning:hover {
-      background: #e0883b;
-    }
-    .concert-item {
-      padding: 15px;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      cursor: pointer;
-      background: #fff;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: background 0.2s, border-color 0.2s;
-    }
-    .concert-item:hover {
-      background: #e6f7f2;
-      border-color: #03af7a;
-    }
-    .status-badge {
-      font-size: 12px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 20px;
-      white-space: nowrap;
-    }
-    .badge-success {
-      background-color: #e6f7f2;
-      color: #03af7a;
-    }
-    .badge-warning {
-      background-color: #fef7e0;
-      color: #b06000;
-    }
-    .badge-gray {
-      background-color: #f1f3f4;
-      color: #5f6368;
-    }
-    .piece-card {
-      padding: 12px;
-      border: 1px solid #eee;
-      border-radius: 6px;
-      background: #fafafa;
-      margin-bottom: 12px;
-    }
-    .header-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-    .btn-group {
+    button.primary-btn:hover { background-color: #2980b9; }
+
+    .action-bar {
       display: flex;
       gap: 10px;
-      margin-top: 15px;
+      margin-bottom: 20px;
     }
-    .btn-group button {
-      margin-top: 0;
-    }
-
-    .home-att-card {
-      background: #e8f0fe;
-      border: 1px solid #1a73e8;
-      border-radius: 8px;
+    .action-bar button {
+      flex: 1;
       padding: 12px;
-      margin-top: 15px;
+      font-weight: bold;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
     }
-    .my-att-card {
-      background: #e8f0fe;
-      border: 1px solid #1a73e8;
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 15px;
-    }
-    .my-att-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 6px 0;
-      border-bottom: 1px dashed #abc7f5;
-      font-size: 14px;
-    }
-    .my-att-item:last-child {
-      border-bottom: none;
-    }
+    .btn-tab-attendance { background-color: #34495e; color: white; }
+    .btn-tab-stats { background-color: #16a085; color: white; }
+    .btn-tab-attendance:hover { background-color: #2c3e50; }
+    .btn-tab-stats:hover { background-color: #138d75; }
 
-    .stats-table {
+    table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
-      font-size: 14px;
+      background: white;
     }
-    .stats-table th, .stats-table td {
-      border: 1px solid #e0e0e0;
-      padding: 8px 10px;
+    th, td {
+      border: 1px solid var(--border-color);
+      padding: 10px;
       text-align: center;
+      font-size: 0.9rem;
     }
-    .stats-table th {
-      background: #f1f3f4;
-      font-weight: 700;
+    th {
+      background-color: #f1f2f6;
     }
-    .stats-table tr:nth-child(even) {
-      background: #fafafa;
-    }
-    .rate-badge {
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-    .rate-high { color: #137333; background: #e6f4ea; }
-    .rate-mid { color: #b06000; background: #fef7e0; }
-    .rate-low { color: #c5221f; background: #fce8e6; }
 
-    .app-footer {
+    .error-msg {
+      color: var(--danger-color);
+      margin-top: 10px;
+      font-size: 0.9rem;
       text-align: center;
-      padding: 20px 0 10px;
-      font-size: 12px;
-      color: #777;
+    }
+
+    .hidden { display: none !important; }
+
+    #loading {
+      text-align: center;
+      padding: 20px;
+      font-weight: bold;
+      color: #666;
     }
   </style>
 </head>
 <body>
 
-  <div class="main-content">
-    <!-- アプリヘッダー -->
-    <div class="app-header">
-      <h1>HUWO2027 出席登録</h1>
+  <header>
+    <div class="header-content">
+      <h1>吹奏楽団 出欠・乗番システム</h1>
+      <div id="headerUserArea" class="hidden">
+        <span id="headerUserName" class="user-info"></span>
+        <button class="logout-btn" onclick="logout()">アカウント切替</button>
+      </div>
     </div>
+  </header>
+
+  <div class="container">
 
     <!-- 1. ログイン画面 -->
-    <div id="view-login" class="card">
-      <h2 style="margin-top:0; font-weight:700; font-size:18px;">団員ログイン</h2>
-      <div class="form-group">
-        <label for="login-id">ユーザーID</label>
-        <input type="text" id="login-id" placeholder="例: u001">
-      </div>
-      <div class="form-group">
-        <label for="login-pass">パスワード</label>
-        <input type="password" id="login-pass">
-      </div>
-      <button id="login-btn" onclick="login()">ログイン</button>
-      <p id="login-msg" style="color:red; margin-top: 10px; text-align: center; font-size:14px;"></p>
-    </div>
-
-    <!-- 2. ホーム画面 -->
-    <div id="view-home" class="hidden">
-      <div class="header-bar">
-        <h3 style="margin:0; font-weight:700;"><span id="user-name"></span> さん</h3>
-        <button onclick="logout()" style="width: auto; padding: 6px 12px;" class="btn-secondary">ログアウト</button>
-      </div>
-
-      <!-- 一般団員向けカード：演奏会・乗番設定 -->
-      <div id="card-roster-view" class="card" style="border-left: 5px solid #03af7a;">
-        <h3 style="margin-top:0; font-weight:700; font-size:16px;">演奏会・乗番設定</h3>
-        <p style="font-size:13px; color:#666;">最初に曲ごとの乗り番や担当パートを登録してください。</p>
-        <div id="concert-list">読み込み中...</div>
-      </div>
-
-      <!-- 一般団員向けカード：合奏出欠確認 -->
-      <div id="card-attendance-view" class="card" style="border-left: 5px solid #005aff;">
-        <h3 style="margin-top:0; font-weight:700; font-size:16px;">合奏出欠確認</h3>
-        <p style="font-size:13px; color:#666;">演奏会と練習日を指定して自分の登録状況の確認と出欠送信を行います。</p>
-        
-        <button id="home-att-btn" onclick="showAttendanceForm()" style="background: #005aff;" disabled>データ読み込み中...</button>
-        
-        <div id="home-attendance-status-container"></div>
-      </div>
-
-      <!-- 技術局専用カード -->
-      <div id="card-tech-view" class="card hidden" style="border-left: 5px solid #8e44ad;">
-        <h3 style="margin-top:0; font-weight:700; font-size:16px;">技術局専用</h3>
-        <p style="font-size:13px; color:#666;">演奏会と合奏日ごとのパート別出席率を確認できます。</p>
-        <button id="home-tech-btn" onclick="showTechView()" style="background: #8e44ad;" disabled>データ読み込み中...</button>
-      </div>
-    </div>
-
-    <!-- 3. 乗番・パート設定画面 -->
-    <div id="view-roster" class="card hidden">
-      <button onclick="showHome()" class="btn-secondary" style="margin-bottom: 15px; width: auto; padding: 6px 12px;">← ホームへ戻る</button>
-      <h3 id="roster-concert-title" style="margin-top:0; font-weight:700; font-size:16px;"></h3>
-      <form id="roster-form">
-        <div id="pieces-container"></div>
-        <div class="btn-group">
-          <button type="button" class="btn-warning" onclick="submitRoster('一時保存')">一時保存する</button>
-          <button type="button" style="background: #03af7a;" onclick="submitRoster('確定')">保存する（確定）</button>
+    <div id="loginCard" class="card">
+      <h2>ログイン</h2>
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="userId">ユーザーID</label>
+          <input type="text" id="userId" required placeholder="例: 101 または performance">
         </div>
+        <div class="form-group">
+          <label for="password">パスワード</label>
+          <input type="password" id="password" required placeholder="パスワードを入力">
+        </div>
+        <button type="submit" class="primary-btn">ログイン</button>
+        <div id="loginError" class="error-msg"></div>
       </form>
     </div>
 
-    <!-- 4. 合奏出欠入力・個人確認画面 -->
-    <div id="view-attendance" class="card hidden">
-      <button onclick="showHome()" class="btn-secondary" style="margin-bottom: 15px; width: auto; padding: 6px 12px;">← ホームへ戻る</button>
-      <h3 style="margin-top:0; font-weight:700; font-size:16px;">合奏出欠確認・入力</h3>
+    <!-- ローディング -->
+    <div id="loading" class="hidden">通信中...しばらくお待ちください</div>
 
-      <div class="form-group">
-        <label for="att-concert">① 演奏会を選択</label>
-        <select id="att-concert" onchange="onConcertChanged()" required>
-          <option value="">演奏会を選択してください</option>
-        </select>
+    <!-- 2. メイン機能画面（ログイン後） -->
+    <div id="mainApp" class="hidden">
+      
+      <!-- 切り替えボタンバー -->
+      <div class="action-bar">
+        <button class="btn-tab-attendance" onclick="switchView('attendance')">📅 出欠・乗番登録</button>
+        <button class="btn-tab-stats" onclick="switchView('stats')">📊 登録状況・集計一覧</button>
       </div>
 
-      <div class="form-group">
-        <label for="att-date">② 練習日を選択</label>
-        <select id="att-date" onchange="onDateChanged()" required>
-          <option value="">演奏会を先に選択してください</option>
-        </select>
+      <!-- ビューA：出欠登録画面 -->
+      <div id="viewAttendance" class="card">
+        <h2>出欠登録</h2>
+        <div id="attendanceContent"></div>
       </div>
 
-      <div id="my-attendance-status-container"></div>
-
-      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-
-      <form id="attendance-form" onsubmit="submitAttendance(event)">
-        <h4 style="margin: 0 0 10px 0; font-size:15px;">新規 / 変更送信</h4>
+      <!-- ビューB：技術局用 登録状況・集計一覧画面 -->
+      <div id="viewStats" class="card hidden">
+        <h2>📊 登録状況・集計一覧</h2>
         <div class="form-group">
-          <label for="att-target">対象曲・練習項目</label>
-          <select id="att-target" required>
-            <option value="">練習日を選択してください</option>
-          </select>
+          <label for="statsConcertSelect">対象演奏会</label>
+          <select id="statsConcertSelect" onchange="loadStatsData()"></select>
         </div>
-
-        <div class="form-group">
-          <label for="att-status">出欠</label>
-          <select id="att-status" required>
-            <option value="〇">〇（出席）</option>
-            <option value="✕">✕（欠席）</option>
-            <option value="遅刻">遅刻</option>
-            <option value="早退">早退</option>
-          </select>
+        <div id="statsResultArea">
+          <p>データを読み込んでいます...</p>
         </div>
+      </div>
 
-        <div class="form-group">
-          <label for="att-note">備考（遅刻早退の時間や理由など）</label>
-          <textarea id="att-note" rows="3" placeholder="例: 19:30から遅れて参加予定です"></textarea>
-        </div>
-
-        <button type="submit" id="att-submit-btn" style="background: #005aff;">出欠を送信する</button>
-      </form>
     </div>
 
-    <!-- 5. 技術局専用画面 -->
-    <div id="view-tech" class="card hidden">
-      <button onclick="showHome()" class="btn-secondary" style="margin-bottom: 15px; width: auto; padding: 6px 12px;">← ホームへ戻る</button>
-      <h3 style="margin-top:0; font-weight:700; font-size:16px; color:#8e44ad;">技術局専用：パート別出席率</h3>
-
-      <div class="form-group">
-        <label for="tech-concert">① 演奏会を選択</label>
-        <select id="tech-concert" onchange="onTechConcertChanged()" required>
-          <option value="">演奏会を選択してください</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="tech-date">② 合奏日（練習日）を選択</label>
-        <select id="tech-date" onchange="loadTechStats()" required>
-          <option value="">演奏会を先に選択してください</option>
-        </select>
-      </div>
-
-      <div id="tech-stats-container" style="margin-top: 20px;">
-        <p style="color:#666; font-size:14px; text-align:center;">演奏会と合奏日を選択すると出席率が表示されます。</p>
-      </div>
-    </div>
   </div>
 
-  <!-- フッター -->
-  <footer class="app-footer">
-    <span id="last-updated">最終更新: ---</span>
-  </footer>
-
   <script>
+    // 指定されたGASのウェブアプリURL
     const GAS_URL = "https://script.google.com/macros/s/AKfycbx7kBuu3SAjBjXQe9RB0YB3EX2zSQEOvPeOb6jAD_PxIj0IASIvrbWTgDuHTm0SnZBC/exec";
 
-    const PART_OPTIONS = {
-      "Clarinet": ["1st Cl", "2nd Cl", "3rd Cl", "Es Cl", "Alto Cl", "Bass Cl", "ContraBass Cl", "不参加", "その他（直接入力）"],
-      "Trumpet": ["1st Tp", "2nd Tp", "3rd Tp", "Flugelhorn", "Cornet", "不参加", "その他（直接入力）"],
-      "Saxophone": ["Alto 1st", "Alto 2nd", "Tenor", "Baritone", "Soprano", "不参加", "その他（直接入力）"],
-      "Flute": ["1st Fl", "2nd Fl", "Piccolo", "不参加", "その他（直接入力）"],
-      "Percussion": ["Timpani", "Snare", "Mallets", "Aux", "不参加", "その他（直接入力）"],
-      "Euphonium": ["1st", "2nd", "Solo", "アシスト", "不参加", "その他（直接入力）"],
-      "Trombone": ["1st", "2nd", "3rd", "Bass Trb", "不参加", "その他（直接入力）"],
-      "Horn": ["1st", "2nd", "3rd", "4th", "不参加", "その他（直接入力）"],
-      "Tuba": ["1st", "2nd", "不参加", "その他（直接入力）"]
-    };
-
     let currentUser = null;
-    let currentConcerts = [];
-    let currentSchedules = {};
-    let scheduleDatesList = [];
-    let currentUserAttendance = {};
-    let selectedConcertId = null;
+    let appData = null;
 
-    window.onload = () => {
-      displayLastModified();
-
-      const savedUser = localStorage.getItem("band_user");
+    window.onload = function() {
+      const savedUser = localStorage.getItem("huwo_user");
       if (savedUser) {
-        try {
-          currentUser = JSON.parse(savedUser);
-          if (currentUser && currentUser.userId) {
-            showHome();
-          } else {
-            logout();
-          }
-        } catch (e) {
-          logout();
-        }
+        currentUser = JSON.parse(savedUser);
+        showMainApp();
       }
     };
 
-    function displayLastModified() {
-      try {
-        const lastMod = new Date(document.lastModified);
-        if (!isNaN(lastMod.getTime())) {
-          const year = lastMod.getFullYear();
-          const month = String(lastMod.getMonth() + 1).padStart(2, '0');
-          const day = String(lastMod.getDate()).padStart(2, '0');
-          const hours = String(lastMod.getHours()).padStart(2, '0');
-          const minutes = String(lastMod.getMinutes()).padStart(2, '0');
-          document.getElementById("last-updated").textContent = `最終更新: ${year}/${month}/${day} ${hours}:${minutes}`;
-        }
-      } catch (e) {
-        console.warn("Date parse error", e);
-      }
-    }
+    async function handleLogin(e) {
+      e.preventDefault();
+      const userIdInput = document.getElementById("userId").value.trim();
+      const passwordInput = document.getElementById("password").value.trim();
+      const errorDiv = document.getElementById("loginError");
+      errorDiv.textContent = "";
 
-    function switchView(viewId) {
-      ["view-login", "view-home", "view-roster", "view-attendance", "view-tech"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.add("hidden");
-      });
-      const target = document.getElementById(viewId);
-      if (target) target.classList.remove("hidden");
-    }
-
-    async function apiCall(payload) {
+      showLoading(true);
       try {
-        const response = await fetch(GAS_URL, {
+        const res = await fetch(GAS_URL, {
           method: "POST",
-          body: JSON.stringify(payload)
+          body: JSON.stringify({
+            action: "login",
+            userId: userIdInput,
+            password: passwordInput
+          })
         });
-        return await response.json();
+        const data = await res.json();
+        showLoading(false);
+
+        if (data.result === "success") {
+          currentUser = data.user;
+          localStorage.setItem("huwo_user", JSON.stringify(currentUser));
+          showMainApp();
+        } else {
+          errorDiv.textContent = data.message || "ログインに失敗しました。";
+        }
       } catch (err) {
-        console.error("API Error:", err);
-        return { result: "error", message: "通信エラーが発生しました。" };
-      }
-    }
-
-    async function login() {
-      const userIdEl = document.getElementById("login-id");
-      const passwordEl = document.getElementById("login-pass");
-      const msg = document.getElementById("login-msg");
-      const btn = document.getElementById("login-btn");
-
-      const userId = userIdEl ? userIdEl.value.trim() : "";
-      const password = passwordEl ? passwordEl.value.trim() : "";
-
-      if (!userId || !password) {
-        if (msg) msg.textContent = "IDとパスワードを入力してください。";
-        return;
-      }
-
-      if (btn) btn.disabled = true;
-      if (msg) msg.textContent = "通信中...";
-
-      const res = await apiCall({ action: "login", userId, password });
-      if (btn) btn.disabled = false;
-
-      if (res && res.result === "success" && res.user) {
-        if (msg) msg.textContent = "";
-        currentUser = res.user;
-        localStorage.setItem("band_user", JSON.stringify(currentUser));
-        showHome();
-      } else {
-        if (msg) msg.textContent = res ? res.message : "ログイン処理に失敗しました。";
+        showLoading(false);
+        errorDiv.textContent = "通信エラーが発生しました: " + err.message;
       }
     }
 
     function logout() {
-      localStorage.removeItem("band_user");
+      localStorage.removeItem("huwo_user");
       currentUser = null;
-      const u = document.getElementById("login-id");
-      const p = document.getElementById("login-pass");
-      if (u) u.value = "";
-      if (p) p.value = "";
-      switchView("view-login");
+      document.getElementById("mainApp").classList.add("hidden");
+      document.getElementById("loginCard").classList.remove("hidden");
+      document.getElementById("headerUserArea").classList.add("hidden");
+      document.getElementById("userId").value = "";
+      document.getElementById("password").value = "";
     }
 
-    async function showHome() {
-      switchView("view-home");
-      const uNameEl = document.getElementById("user-name");
-      if (uNameEl && currentUser) uNameEl.textContent = currentUser.name || "";
+    async function showMainApp() {
+      document.getElementById("loginCard").classList.add("hidden");
+      document.getElementById("mainApp").classList.remove("hidden");
       
-      const container = document.getElementById("concert-list");
-      const attBtn = document.getElementById("home-att-btn");
-      const techBtn = document.getElementById("home-tech-btn");
-      
-      const rosterCard = document.getElementById("card-roster-view");
-      const attCard = document.getElementById("card-attendance-view");
-      const techCard = document.getElementById("card-tech-view");
+      const headerUserArea = document.getElementById("headerUserArea");
+      const headerUserName = document.getElementById("headerUserName");
+      headerUserName.textContent = `${currentUser.name} (${currentUser.defaultPart || "技術局"})`;
+      headerUserArea.classList.remove("hidden");
 
-      const isTechUser = currentUser && (currentUser.userId === "performance" || (currentUser.name && currentUser.name.includes("技術局")));
+      await fetchAppData();
+    }
 
-      if (isTechUser) {
-        if (rosterCard) rosterCard.classList.add("hidden");
-        if (attCard) attCard.classList.add("hidden");
-        if (techCard) techCard.classList.remove("hidden");
-      } else {
-        if (rosterCard) rosterCard.classList.remove("hidden");
-        if (attCard) attCard.classList.remove("hidden");
-        if (techCard) techCard.classList.add("hidden");
-      }
+    async function fetchAppData() {
+      showLoading(true);
+      try {
+        const res = await fetch(GAS_URL, {
+          method: "POST",
+          body: JSON.stringify({
+            action: "getConcerts",
+            userId: currentUser.userId
+          })
+        });
+        const data = await res.json();
+        showLoading(false);
 
-      if (container) container.innerHTML = "読み込み中...";
-      
-      if (attBtn) {
-        attBtn.disabled = true;
-        attBtn.textContent = "データ読み込み中...";
-      }
-      if (techBtn) {
-        techBtn.disabled = true;
-        techBtn.textContent = "データ読み込み中...";
-      }
-
-      const res = await apiCall({ action: "getConcerts", userId: currentUser ? currentUser.userId : "" });
-      if (res && res.result === "success") {
-        currentConcerts = Array.isArray(res.concerts) ? res.concerts : [];
-        currentSchedules = res.schedules || {};
-        scheduleDatesList = Array.isArray(res.scheduleDates) ? res.scheduleDates : [];
-        currentUserAttendance = res.userAttendance || {};
-
-        if (container) {
-          container.innerHTML = "";
-          if (currentConcerts.length === 0) {
-            container.innerHTML = "<p style='color:#666;'>予定されている演奏会はありません。</p>";
-          } else {
-            currentConcerts.forEach(c => {
-              if (!c) return;
-              const div = document.createElement("div");
-              div.className = "concert-item";
-              
-              let badgeHtml = "";
-              if (c.status === "確定") {
-                badgeHtml = `<span class="status-badge badge-success">完了</span>`;
-              } else if (c.status === "一時保存") {
-                badgeHtml = `<span class="status-badge badge-warning">一時保存中</span>`;
-              } else {
-                badgeHtml = `<span class="status-badge badge-gray">未登録</span>`;
-              }
-
-              div.innerHTML = `
-                <div>
-                  <strong>${c.title || "演奏会"}</strong><br>
-                  <small style="color:#666;">タップして乗番・パートを設定</small>
-                </div>
-                ${badgeHtml}
-              `;
-              div.onclick = () => showRosterForm(c.concertId);
-              container.appendChild(div);
-            });
-          }
+        if (data.result === "success") {
+          appData = data;
+          initAttendanceView();
+          initStatsView();
+        } else {
+          alert("データ取得エラー: " + data.message);
         }
-
-        if (attBtn) {
-          attBtn.disabled = false;
-          attBtn.textContent = "合奏出欠を入力・確認する";
-        }
-        if (techBtn) {
-          techBtn.disabled = false;
-          techBtn.textContent = "技術局専用ページを開く";
-        }
-
-        renderHomeAttendanceStatus();
+      } catch (err) {
+        showLoading(false);
+        alert("データ取得時に通信エラーが発生しました。");
       }
     }
 
-    function renderHomeAttendanceStatus() {
-      const container = document.getElementById("home-attendance-status-container");
-      if (!container) return;
+    function switchView(viewName) {
+      const attView = document.getElementById("viewAttendance");
+      const statsView = document.getElementById("viewStats");
 
-      const dates = Object.keys(currentUserAttendance || {});
-      if (dates.length === 0) {
-        container.innerHTML = "";
-        return;
-      }
-
-      const sortedDates = dates.sort();
-      const latestDate = sortedDates[sortedDates.length - 1];
-      const records = currentUserAttendance[latestDate];
-
-      if (!records || records.length === 0) {
-        container.innerHTML = "";
-        return;
-      }
-
-      let itemsHtml = "";
-      records.forEach(r => {
-        let badgeColor = "#137333";
-        if (r.status === "✕") badgeColor = "#c5221f";
-        else if (r.status === "遅刻" || r.status === "早退") badgeColor = "#b06000";
-
-        const noteText = r.note ? `<br><small style="color:#666;">（備考: ${r.note}）</small>` : "";
-
-        itemsHtml += `
-          <div class="my-att-item">
-            <div>
-              <strong>${r.targetPiece}</strong>${noteText}
-            </div>
-            <div>
-              <span style="font-weight:bold; color:${badgeColor}; font-size:15px;">${r.status}</span>
-            </div>
-          </div>
-        `;
-      });
-
-      container.innerHTML = `
-        <div class="home-att-card">
-          <strong style="font-size:13px; color:#005aff;">最新の登録状況（${latestDate}）</strong>
-          <div style="margin-top:8px;">
-            ${itemsHtml}
-          </div>
-        </div>
-      `;
-    }
-
-    function showRosterForm(concertId) {
-      selectedConcertId = concertId;
-      const concert = currentConcerts.find(c => c && c.concertId === concertId);
-      if (!concert) return;
-
-      const titleEl = document.getElementById("roster-concert-title");
-      if (titleEl) titleEl.textContent = concert.title || "";
-      
-      const container = document.getElementById("pieces-container");
-      if (!container) return;
-      container.innerHTML = "";
-
-      const userPart = (currentUser && currentUser.defaultPart) ? currentUser.defaultPart : "";
-      const options = PART_OPTIONS[userPart] || ["1st", "2nd", "3rd", "アシスト", "不参加", "その他（直接入力）"];
-      const userRoster = concert.userRoster || {};
-
-      const pieces = Array.isArray(concert.pieces) ? concert.pieces : [];
-      pieces.forEach((piece, index) => {
-        const savedPart = userRoster[piece] || "";
-        const isCustom = savedPart && !options.includes(savedPart);
-
-        const card = document.createElement("div");
-        card.className = "piece-card";
-        card.innerHTML = `
-          <div style="font-weight:bold; margin-bottom:8px;">${piece}</div>
-          <div style="display: flex; gap: 8px; flex-direction: column;">
-            <select id="select-part-${index}" onchange="toggleCustomInput(${index})">
-              <option value="">-- パートを選択 --</option>
-              ${options.map(opt => `<option value="${opt}" ${savedPart === opt ? 'selected' : ''}>${opt}</option>`).join('')}
-            </select>
-            <input type="text" id="custom-part-${index}" placeholder="例: 1st (Es Cl持ち替え)" 
-                   value="${isCustom ? savedPart : ''}" 
-                   style="display: ${isCustom ? 'block' : 'none'}; margin-top:5px;">
-          </div>
-        `;
-        container.appendChild(card);
-
-        if (isCustom) {
-          const sel = document.getElementById(`select-part-${index}`);
-          if (sel) sel.value = "その他（直接入力）";
-        }
-      });
-
-      switchView("view-roster");
-    }
-
-    function toggleCustomInput(index) {
-      const select = document.getElementById(`select-part-${index}`);
-      const customInput = document.getElementById(`custom-part-${index}`);
-      if (!select || !customInput) return;
-
-      if (select.value === "その他（直接入力）") {
-        customInput.style.display = "block";
-        customInput.required = true;
-      } else {
-        customInput.style.display = "none";
-        customInput.required = false;
+      if (viewName === 'attendance') {
+        attView.classList.remove("hidden");
+        statsView.classList.add("hidden");
+      } else if (viewName === 'stats') {
+        attView.classList.add("hidden");
+        statsView.classList.remove("hidden");
+        loadStatsData();
       }
     }
 
-    async function submitRoster(saveStatus) {
-      const concert = currentConcerts.find(c => c && c.concertId === selectedConcertId);
-      if (!concert) return;
-
-      const roster = {};
-      const pieces = Array.isArray(concert.pieces) ? concert.pieces : [];
-
-      pieces.forEach((piece, index) => {
-        const select = document.getElementById(`select-part-${index}`);
-        const customInput = document.getElementById(`custom-part-${index}`);
-        if (!select) return;
-        
-        let finalPart = select.value;
-        if (finalPart === "その他（直接入力）" && customInput) {
-          finalPart = customInput.value.trim();
-        }
-
-        if (finalPart) {
-          roster[piece] = finalPart;
-        }
-      });
-
-      const res = await apiCall({
-        action: "saveRoster",
-        userId: currentUser ? currentUser.userId : "",
-        concertId: selectedConcertId,
-        roster: roster,
-        status: saveStatus
-      });
-
-      if (res && res.result === "success") {
-        const msgStr = saveStatus === "確定" ? "乗番情報を保存（完了）しました！" : "乗番情報を一時保存しました！";
-        alert(msgStr);
-        showHome();
-      }
+    function initAttendanceView() {
+      const container = document.getElementById("attendanceContent");
+      container.innerHTML = `<p>${currentUser.name} さん用の出欠・乗番機能が利用可能です。</p>`;
     }
 
-    /* ---------------- 出欠確認・送信 ---------------- */
-
-    function populateConcertSelect(selectElementId) {
-      const selectEl = document.getElementById(selectElementId);
-      if (!selectEl) return;
-
-      selectEl.innerHTML = "<option value=''>演奏会を選択してください</option>";
-      currentConcerts.forEach(c => {
-        if (!c) return;
-        const opt = document.createElement("option");
-        opt.value = c.concertId;
-        opt.textContent = c.title || "演奏会";
-        selectEl.appendChild(opt);
-      });
-    }
-
-    function populateDateSelect(selectElementId, selectedVal = "") {
-      const selectEl = document.getElementById(selectElementId);
-      if (!selectEl) return;
-
-      selectEl.innerHTML = "<option value=''>練習日を選択してください</option>";
-      
-      if (scheduleDatesList.length > 0) {
-        scheduleDatesList.forEach(dateStr => {
-          const d = new Date(dateStr + "T00:00:00");
-          const days = ["日", "月", "火", "水", "木", "金", "土"];
-          const label = `${dateStr} (${days[d.getDay()]})`;
-
+    function initStatsView() {
+      const select = document.getElementById("statsConcertSelect");
+      select.innerHTML = "";
+      if (appData && appData.concerts) {
+        appData.concerts.forEach(c => {
           const opt = document.createElement("option");
-          opt.value = dateStr;
-          opt.textContent = label;
-          if (dateStr === selectedVal) opt.selected = true;
-          selectEl.appendChild(opt);
+          opt.value = c.concertId;
+          opt.textContent = c.title;
+          select.appendChild(opt);
         });
       }
+      loadStatsData();
     }
 
-    function showAttendanceForm() {
-      switchView("view-attendance");
-      populateConcertSelect("att-concert");
-      
-      const dateEl = document.getElementById("att-date");
-      if (dateEl) {
-        dateEl.innerHTML = "<option value=''>演奏会を先に選択してください</option>";
-        dateEl.disabled = true;
-      }
+    // 技術局専用：パート別集計の読み込み（一番左に楽器列を表示）
+    async function loadStatsData() {
+      const concertId = document.getElementById("statsConcertSelect").value;
+      const date = appData && appData.scheduleDates && appData.scheduleDates.length > 0 ? appData.scheduleDates[0] : "";
 
-      const container = document.getElementById("my-attendance-status-container");
-      if (container) container.innerHTML = `<div class="my-att-card" style="background:#f9f9f9; border-color:#ddd;"><strong style="font-size:13px; color:#666;">選択日のあなたの登録状況</strong><p style="font-size:13px; color:#888; margin:5px 0 0 0;">演奏会と練習日を選択してください。</p></div>`;
-      
-      const targetSelect = document.getElementById("att-target");
-      if (targetSelect) targetSelect.innerHTML = "<option value=''>演奏会と練習日を選択してください</option>";
-    }
+      const area = document.getElementById("statsResultArea");
+      area.innerHTML = "<p>集計データを読み込んでいます...</p>";
 
-    function onConcertChanged() {
-      const concertId = document.getElementById("att-concert")?.value;
-      const dateEl = document.getElementById("att-date");
-
-      if (!concertId) {
-        if (dateEl) {
-          dateEl.innerHTML = "<option value=''>演奏会を先に選択してください</option>";
-          dateEl.disabled = true;
-        }
-        return;
-      }
-
-      if (dateEl) {
-        dateEl.disabled = false;
-        populateDateSelect("att-date");
-      }
-      onDateChanged();
-    }
-
-    function onDateChanged() {
-      renderMyAttendanceStatus();
-      updateTargetPieces();
-    }
-
-    function renderMyAttendanceStatus() {
-      const dateVal = document.getElementById("att-date")?.value;
-      const container = document.getElementById("my-attendance-status-container");
-      if (!container) return;
-
-      if (!dateVal || !currentUserAttendance || !currentUserAttendance[dateVal]) {
-        container.innerHTML = `
-          <div class="my-att-card" style="background:#f9f9f9; border-color:#ddd;">
-            <strong style="font-size:13px; color:#666;">選択日のあなたの登録状況</strong>
-            <p style="font-size:13px; color:#888; margin:5px 0 0 0;">まだこの日の出欠登録はありません。</p>
-          </div>
-        `;
-        return;
-      }
-
-      const records = currentUserAttendance[dateVal];
-      let itemsHtml = "";
-
-      records.forEach(r => {
-        let badgeColor = "#137333";
-        if (r.status === "✕") badgeColor = "#c5221f";
-        else if (r.status === "遅刻" || r.status === "早退") badgeColor = "#b06000";
-
-        const noteText = r.note ? `<br><small style="color:#666;">（備考: ${r.note}）</small>` : "";
-
-        itemsHtml += `
-          <div class="my-att-item">
-            <div>
-              <strong>${r.targetPiece}</strong>${noteText}
-            </div>
-            <div>
-              <span style="font-weight:bold; color:${badgeColor}; font-size:15px;">${r.status}</span>
-            </div>
-          </div>
-        `;
-      });
-
-      container.innerHTML = `
-        <div class="my-att-card">
-          <strong style="font-size:13px; color:#1a73e8;">選択日のあなたの登録状況</strong>
-          <div style="margin-top:8px;">
-            ${itemsHtml}
-          </div>
-        </div>
-      `;
-    }
-
-    // 練習日程シートに登録されている曲目のみを厳格に表示する関数
-    function updateTargetPieces() {
-      const concertId = document.getElementById("att-concert")?.value;
-      const dateEl = document.getElementById("att-date");
-      const targetSelect = document.getElementById("att-target");
-      if (!targetSelect) return;
-      targetSelect.innerHTML = "";
-
-      const dateVal = dateEl ? dateEl.value : "";
-      if (!concertId || !dateVal) {
-        targetSelect.innerHTML = "<option value=''>演奏会と練習日を選択してください</option>";
-        return;
-      }
-
-      const selectedConcert = currentConcerts.find(c => c && c.concertId === concertId);
-      const userDefaultPart = (currentUser && currentUser.defaultPart) ? currentUser.defaultPart : "";
-
-      const d = new Date(dateVal + "T00:00:00");
-      const days = ["日", "月", "火", "水", "木", "金", "土"];
-      const formattedDateStr = `${d.getMonth() + 1}/${d.getDate()}(${days[d.getDay()]})`;
-
-      const scheduledItems = (currentSchedules && Array.isArray(currentSchedules[dateVal])) ? currentSchedules[dateVal] : [];
-      let validItems = scheduledItems.filter(item => item && item.concertId === concertId);
-
-      if (validItems.length > 0) {
-        validItems.forEach(item => {
-          const pieceName = item.piece || "";
-          const timeStr = item.time ? ` ${item.time}` : "";
-
-          if (pieceName === "基礎合奏") {
-            const opt = document.createElement("option");
-            const valStr = `${formattedDateStr}${timeStr} 基礎合奏`;
-            opt.value = valStr;
-            opt.textContent = valStr;
-            opt.setAttribute("data-part", userDefaultPart);
-            targetSelect.appendChild(opt);
-          } else {
-            let userPartForPiece = userDefaultPart;
-            if (selectedConcert && selectedConcert.userRoster && selectedConcert.userRoster[pieceName]) {
-              userPartForPiece = selectedConcert.userRoster[pieceName];
-            }
-
-            if (userPartForPiece !== "不参加") {
-              const opt = document.createElement("option");
-              const valStr = `${formattedDateStr}${timeStr} ${pieceName}`;
-              opt.value = valStr;
-              opt.textContent = `${valStr} [担当: ${userPartForPiece}]`;
-              opt.setAttribute("data-part", userPartForPiece);
-              targetSelect.appendChild(opt);
-            }
-          }
+      try {
+        const res = await fetch(GAS_URL, {
+          method: "POST",
+          body: JSON.stringify({
+            action: "getStats",
+            concertId: concertId,
+            date: date
+          })
         });
-      } else {
-        const defaultOpt = document.createElement("option");
-        defaultOpt.value = "";
-        defaultOpt.textContent = "この日の練習曲目データはありません";
-        targetSelect.appendChild(defaultOpt);
-      }
-    }
+        const data = await res.json();
 
-    async function submitAttendance(event) {
-      event.preventDefault();
-      const concertId = document.getElementById("att-concert")?.value;
-      const dateVal = document.getElementById("att-date")?.value;
-      const targetSelect = document.getElementById("att-target");
-      const targetPieceStr = targetSelect?.value;
-      const selectedOpt = targetSelect?.options[targetSelect.selectedIndex];
-      const part = selectedOpt ? selectedOpt.getAttribute("data-part") : "";
-      const status = document.getElementById("att-status")?.value;
-      const note = document.getElementById("att-note")?.value;
-
-      if (!concertId || !dateVal || !targetPieceStr) {
-        alert("練習日と対象曲を選択してください。");
-        return;
-      }
-
-      let targetPieceName = targetPieceStr;
-      const match = targetPieceStr.match(/^\d+\/\d+\([月火水木金土日]\)(?:\s+\S+)?\s+(.+)$/);
-      if (match && match[1]) {
-        targetPieceName = match[1].trim();
-      }
-
-      const res = await apiCall({
-        action: "saveAttendance",
-        userId: currentUser ? currentUser.userId : "",
-        name: currentUser ? currentUser.name : "",
-        date: dateVal,
-        targetPiece: targetPieceName,
-        part: part || "",
-        detailPart: "",
-        status: status,
-        note: note
-      });
-
-      if (res && res.result === "success") {
-        alert("出欠を送信しました！");
-        const homeRes = await apiCall({ action: "getConcerts", userId: currentUser ? currentUser.userId : "" });
-        if (homeRes && homeRes.result === "success") {
-          currentUserAttendance = homeRes.userAttendance || {};
-          currentSchedules = homeRes.schedules || {};
-        }
-        showHome();
-      } else {
-        alert("送信に失敗しました: " + (res ? res.message : "不明なエラー"));
-      }
-    }
-
-    /* ---------------- 技術局専用機能 ---------------- */
-
-    function showTechView() {
-      switchView("view-tech");
-      populateConcertSelect("tech-concert");
-
-      const dateEl = document.getElementById("tech-date");
-      if (dateEl) {
-        dateEl.innerHTML = "<option value=''>演奏会を先に選択してください</option>";
-        dateEl.disabled = true;
-      }
-      loadTechStats();
-    }
-
-    function onTechConcertChanged() {
-      const concertId = document.getElementById("tech-concert")?.value;
-      const dateEl = document.getElementById("tech-date");
-
-      if (!concertId) {
-        if (dateEl) {
-          dateEl.innerHTML = "<option value=''>演奏会を先に選択してください</option>";
-          dateEl.disabled = true;
-        }
-        return;
-      }
-
-      if (dateEl) {
-        dateEl.disabled = false;
-        populateDateSelect("tech-date");
-      }
-      loadTechStats();
-    }
-
-    async function loadTechStats() {
-      const concertId = document.getElementById("tech-concert")?.value;
-      const dateVal = document.getElementById("tech-date")?.value;
-      const container = document.getElementById("tech-stats-container");
-      if (!container) return;
-
-      if (!concertId || !dateVal) {
-        container.innerHTML = "<p style='color:#666; font-size:14px; text-align:center;'>演奏会と合奏日を選択してください。</p>";
-        return;
-      }
-
-      container.innerHTML = "<p style='color:#666; font-size:14px; text-align:center;'>集計中...</p>";
-
-      const res = await apiCall({
-        action: "getStats",
-        concertId: concertId,
-        date: dateVal
-      });
-
-      if (res && res.result === "success" && Array.isArray(res.stats)) {
-        if (res.stats.length === 0) {
-          container.innerHTML = "<p style='color:#666; font-size:14px; text-align:center;'>対象のデータがありません。</p>";
-          return;
-        }
-
-        let html = "";
-        res.stats.forEach(st => {
-          html += `<h4 style="margin: 15px 0 5px 0; font-size:15px; color:#333;">🎵 ${st.pieceName}</h4>`;
-          if (!st.parts || st.parts.length === 0) {
-            html += "<p style='font-size:13px; color:#666;'>該当する乗番データがありません。</p>";
+        if (data.result === "success") {
+          let html = "";
+          if (!data.stats || data.stats.length === 0) {
+            area.innerHTML = "<p>集計データがありません。</p>";
             return;
           }
 
-          html += `
-            <table class="stats-table">
-              <thead>
-                <tr>
-                  <th>パート</th>
-                  <th>乗番人数</th>
-                  <th>出席人数</th>
-                  <th>出席率</th>
-                </tr>
-              </thead>
-              <tbody>
-          `;
-
-          st.parts.forEach(p => {
-            let rateClass = "rate-high";
-            if (p.rate < 50) rateClass = "rate-low";
-            else if (p.rate < 80) rateClass = "rate-mid";
-
+          data.stats.forEach(s => {
+            html += `<h3>曲名: ${s.pieceName}</h3>`;
             html += `
-              <tr>
-                <td style="font-weight:700; text-align:left;">${p.partName}</td>
-                <td>${p.rosterCount}人</td>
-                <td>${p.presentCount}人</td>
-                <td><span class="rate-badge ${rateClass}">${p.rate}%</span></td>
-              </tr>
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width: 25%;">楽器</th>
+                    <th style="width: 25%;">パート</th>
+                    <th>乗番人数</th>
+                    <th>出席人数</th>
+                    <th>出席率</th>
+                  </tr>
+                </thead>
+                <tbody>
             `;
+
+            if (!s.parts || s.parts.length === 0) {
+              html += `<tr><td colspan="5" style="text-align: center;">データがありません</td></tr>`;
+            } else {
+              s.parts.forEach(p => {
+                html += `
+                  <tr>
+                    <td style="font-weight: bold; text-align: left; padding-left: 10px;">${p.instrument}</td>
+                    <td style="text-align: left; padding-left: 10px;">${p.partName}</td>
+                    <td>${p.rosterCount}人</td>
+                    <td>${p.presentCount}人</td>
+                    <td><strong>${p.rate}%</strong></td>
+                  </tr>
+                `;
+              });
+            }
+            html += `</tbody></table><br>`;
           });
-
-          html += `</tbody></table>`;
-        });
-
-        container.innerHTML = html;
-      } else {
-        container.innerHTML = "<p style='color:red; font-size:14px; text-align:center;'>集計データの取得に失敗しました。</p>";
+          area.innerHTML = html;
+        } else {
+          area.innerHTML = `<p class="error-msg">${data.message}</p>`;
+        }
+      } catch (err) {
+        area.innerHTML = `<p class="error-msg">集計データの取得に失敗しました: ${err.message}</p>`;
       }
+    }
+
+    function showLoading(show) {
+      const loader = document.getElementById("loading");
+      if (show) loader.classList.remove("hidden");
+      else loader.classList.add("hidden");
     }
   </script>
 </body>
